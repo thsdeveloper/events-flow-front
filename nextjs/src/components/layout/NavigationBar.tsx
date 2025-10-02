@@ -38,7 +38,7 @@ const NavigationBar = forwardRef<HTMLElement, NavigationBarProps>(({ navigation,
 	};
 
 	return (
-		<header ref={ref} className="sticky top-0 z-50 w-full bg-background text-foreground">
+		<header ref={ref} className="sticky top-0 z-50 w-full bg-gradient-to-r from-blue-600 to-cyan-500 text-white">
 			<Container className="flex items-center justify-between p-4">
 				<Link href="/" className="flex-shrink-0">
 					<Image

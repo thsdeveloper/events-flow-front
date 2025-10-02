@@ -23,7 +23,7 @@ export function AccountPageContent() {
 
 	if (isLoading) {
 		return (
-			<div className="container mx-auto py-12 flex items-center justify-center min-h-[60vh]">
+			<div className="max-w-7xl mx-auto sm:px-6 flex items-center justify-between p-4">
 				<Loader2 className="h-8 w-8 animate-spin text-primary" />
 			</div>
 		);
@@ -34,7 +34,7 @@ export function AccountPageContent() {
 	}
 
 	return (
-		<div className="container mx-auto py-12 px-4 max-w-5xl">
+		<div className="container mx-auto py-12 px-4 max-w-7xl">
 			<div className="mb-8">
 				<h1 className="text-3xl font-bold tracking-tight">Minha Conta</h1>
 				<p className="text-muted-foreground mt-2">
