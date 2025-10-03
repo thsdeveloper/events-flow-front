@@ -254,10 +254,49 @@ export const fetchEventBySlug = async (slug: string) => {
 					'price',
 					'featured',
 					'tags',
-					{ organizer_id: ['id', 'email', 'phone', 'description', 'website', { user_id: ['first_name', 'last_name'] }] },
-					{ category_id: ['id', 'name', 'slug', 'icon', 'color'] },
+					{
+						organizer_id: [
+							'id',
+							'name',
+							'email',
+							'phone',
+							'description',
+							'logo',
+							'website',
+							{ user_id: ['first_name', 'last_name'] }
+						]
+					},
+					{ category_id: ['id', 'name', 'slug', 'icon', 'color', 'description'] },
+					{
+						tickets: [
+							'id',
+							'title',
+							'description',
+							'status',
+							'quantity',
+							'quantity_sold',
+							'price',
+							'buyer_price',
+							'service_fee_type',
+							'sale_start_date',
+							'sale_end_date',
+							'min_quantity_per_purchase',
+							'max_quantity_per_purchase',
+							'visibility',
+							'sort',
+						]
+					},
 				],
 				limit: 1,
+				deep: {
+					tickets: {
+						_sort: ['sort'],
+						_filter: {
+							status: { _eq: 'active' },
+							visibility: { _eq: 'public' }
+						}
+					}
+				}
 			}),
 		);
 

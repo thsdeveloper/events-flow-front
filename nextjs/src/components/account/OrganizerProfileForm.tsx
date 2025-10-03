@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { readItems, createItem, updateItem, uploadFiles } from '@directus/sdk';
+import { useDirectusClient } from '@/hooks/useDirectusClient';
 import { Button } from '@/components/ui/button';
 import {
 	Form,
@@ -44,6 +46,7 @@ interface OrganizerProfileFormProps {
 }
 
 export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
+	const client = useDirectusClient();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 	const [organizer, setOrganizer] = useState<Organizer | null>(null);
@@ -68,22 +71,21 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 	}, [userId]);
 
 	const loadOrganizer = async () => {
+		if (!client) return;
+
 		try {
 			setIsLoading(true);
 
-			// Use Next.js API route (cookies sent automatically)
-			const response = await fetch(`/api/organizer?userId=${userId}`, {
-				credentials: 'include',
-			});
+			const organizers = await client.request(
+				readItems('organizers', {
+					filter: { user_id: { _eq: userId } },
+					fields: ['*', { logo: ['*'] }],
+					limit: 1,
+				})
+			);
 
-			if (!response.ok) {
-				throw new Error('Erro ao carregar organizador');
-			}
-
-			const data = await response.json();
-
-			if (data.organizer) {
-				const org = data.organizer;
+			if (organizers && organizers.length > 0) {
+				const org = organizers[0] as Organizer;
 				setOrganizer(org);
 				form.reset({
 					email: org.email || '',
@@ -114,6 +116,8 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 	};
 
 	const onSubmit = async (values: OrganizerProfileFormValues) => {
+		if (!client) return;
+
 		setIsSubmitting(true);
 
 		try {
@@ -124,19 +128,8 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 				const formData = new FormData();
 				formData.append('file', logoFile);
 
-				// Use Next.js API route (cookies sent automatically)
-				const uploadResponse = await fetch('/api/user/profile', {
-					method: 'POST',
-					credentials: 'include',
-					body: formData,
-				});
-
-				if (!uploadResponse.ok) {
-					throw new Error('Erro ao fazer upload do logo');
-				}
-
-				const uploadData = await uploadResponse.json();
-				logoId = uploadData.file.id;
+				const uploadResult = await client.request(uploadFiles(formData));
+				logoId = uploadResult.id;
 			}
 
 			const organizerData = {
@@ -151,22 +144,9 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 
 			if (organizer) {
 				// Update existing organizer
-				const response = await fetch('/api/organizer', {
-					method: 'PATCH',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					credentials: 'include',
-					body: JSON.stringify({
-						id: organizer.id,
-						...organizerData,
-					}),
-				});
-
-				if (!response.ok) {
-					const errorData = await response.json();
-					throw new Error(errorData.error || 'Erro ao atualizar organizador');
-				}
+				await client.request(
+					updateItem('organizers', organizer.id, organizerData)
+				);
 
 				toast({
 					title: 'Perfil de organizador atualizado',
@@ -174,22 +154,12 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 				});
 			} else {
 				// Create new organizer
-				const response = await fetch('/api/organizer', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					credentials: 'include',
-					body: JSON.stringify({
+				await client.request(
+					createItem('organizers', {
 						...organizerData,
 						user_id: userId,
-					}),
-				});
-
-				if (!response.ok) {
-					const errorData = await response.json();
-					throw new Error(errorData.error || 'Erro ao criar organizador');
-				}
+					})
+				);
 
 				toast({
 					title: 'Perfil de organizador criado',

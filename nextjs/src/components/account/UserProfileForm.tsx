@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { uploadFiles, updateMe } from '@directus/sdk';
+import { useDirectusClient } from '@/hooks/useDirectusClient';
 import { Button } from '@/components/ui/button';
 import {
 	Form,
@@ -37,6 +39,7 @@ interface UserProfileFormProps {
 }
 
 export function UserProfileForm({ user }: UserProfileFormProps) {
+	const client = useDirectusClient();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [avatarFile, setAvatarFile] = useState<File | null>(null);
 	const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -67,6 +70,8 @@ export function UserProfileForm({ user }: UserProfileFormProps) {
 	};
 
 	const onSubmit = async (values: UserProfileFormValues) => {
+		if (!client) return;
+
 		setIsSubmitting(true);
 
 		try {
@@ -77,42 +82,21 @@ export function UserProfileForm({ user }: UserProfileFormProps) {
 				const formData = new FormData();
 				formData.append('file', avatarFile);
 
-				// Use Next.js API route (cookies sent automatically)
-				const uploadResponse = await fetch('/api/user/profile', {
-					method: 'POST',
-					credentials: 'include',
-					body: formData,
-				});
-
-				if (!uploadResponse.ok) {
-					throw new Error('Erro ao fazer upload do avatar');
-				}
-
-				const uploadData = await uploadResponse.json();
-				avatarId = uploadData.file.id;
+				const uploadResult = await client.request(uploadFiles(formData));
+				avatarId = uploadResult.id;
 			}
 
 			// Update user profile
-			const response = await fetch('/api/user/profile', {
-				method: 'PATCH',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				credentials: 'include',
-				body: JSON.stringify({
+			await client.request(
+				updateMe({
 					first_name: values.first_name || null,
 					last_name: values.last_name || null,
 					location: values.location || null,
 					title: values.title || null,
 					description: values.description || null,
 					...(avatarId && { avatar: avatarId }),
-				}),
-			});
-
-			if (!response.ok) {
-				const errorData = await response.json();
-				throw new Error(errorData.error || 'Erro ao atualizar perfil');
-			}
+				})
+			);
 
 			toast({
 				title: 'Perfil atualizado',

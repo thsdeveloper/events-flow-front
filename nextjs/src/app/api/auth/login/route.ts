@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createDirectus, rest, authentication, readMe, readUser, withToken } from '@directus/sdk';
-import type { Schema } from '@/types/directus-schema';
+import { readMe } from '@directus/sdk';
+import { getAuthClient } from '@/lib/directus/directus';
 
 export async function POST(request: NextRequest) {
 	try {
@@ -13,65 +13,42 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL as string;
-		const client = createDirectus<Schema>(directusUrl)
-			.with(rest())
-			.with(authentication('json'));
+		// Use the auth client helper (includes rate limiting and retry logic)
+		const client = getAuthClient();
 
-		// Authenticate with Directus
-		const loginResult = await client.login(email, password);
+		// Login - returns { access_token, expires, refresh_token }
+		const authResult = await client.login(email, password);
 
-		if (!loginResult.access_token) {
+		if (!authResult.access_token) {
 			return NextResponse.json(
 				{ error: 'Falha ao fazer login' },
 				{ status: 401 }
 			);
 		}
 
-		// Get user data using the logged in user's token
+		// Get user data using the authenticated client
+		// The SDK automatically uses the access_token from login
 		const userData = await client.request(
 			readMe({
-				fields: ['id', 'email', 'first_name', 'last_name'],
+				fields: ['*'],
 			})
 		);
 
-		const response = NextResponse.json({
+		// Return everything to the client
+		return NextResponse.json({
 			success: true,
-			access_token: loginResult.access_token,
-			refresh_token: loginResult.refresh_token,
-			expires: loginResult.expires,
-			user: {
-				id: userData.id,
-				email: userData.email,
-				first_name: userData.first_name,
-				last_name: userData.last_name,
-			}
+			access_token: authResult.access_token,
+			refresh_token: authResult.refresh_token,
+			expires: authResult.expires,
+			user: userData
 		});
-
-		// Set cookies for middleware authentication
-		response.cookies.set('directus_token', loginResult.access_token, {
-			httpOnly: true,
-			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'lax',
-			maxAge: loginResult.expires ? loginResult.expires / 1000 : 86400, // 24h default
-		});
-
-		if (loginResult.refresh_token) {
-			response.cookies.set('directus_refresh_token', loginResult.refresh_token, {
-				httpOnly: true,
-				secure: process.env.NODE_ENV === 'production',
-				sameSite: 'lax',
-				maxAge: 604800, // 7 days
-			});
-		}
-
-		return response;
 	} catch (error: any) {
 		console.error('Login error:', error);
 
+		// Handle Directus SDK errors
 		if (error.errors) {
 			const firstError = error.errors[0];
-			
+
 return NextResponse.json(
 				{ error: firstError.message || 'Credenciais inválidas' },
 				{ status: 401 }

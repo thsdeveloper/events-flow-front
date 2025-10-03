@@ -72,7 +72,8 @@ export async function POST(request: NextRequest) {
 		if (!uploadResponse.ok) {
 			const error = await uploadResponse.json();
 			console.error('Directus upload error:', error);
-			return NextResponse.json(
+			
+return NextResponse.json(
 				{ error: 'Failed to upload file' },
 				{ status: uploadResponse.status }
 			);
@@ -105,7 +106,8 @@ export async function POST(request: NextRequest) {
 		});
 	} catch (error) {
 		console.error('Upload error:', error);
-		return NextResponse.json(
+		
+return NextResponse.json(
 			{ error: 'Internal server error' },
 			{ status: 500 }
 		);

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { X, Info } from 'lucide-react';
+import { createItem, updateItem } from '@directus/sdk';
+import { useDirectusClient } from '@/hooks/useDirectusClient';
 import { EventTicket } from '@/types/directus-schema';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,6 +28,7 @@ export default function TicketFormModal({
 	editingTicket,
 	onTicketSaved,
 }: TicketFormModalProps) {
+	const client = useDirectusClient();
 	const { toast } = useToast();
 	const [isLoading, setIsLoading] = useState(false);
 	const [serviceFeePercentage, setServiceFeePercentage] = useState(10);
@@ -45,24 +48,7 @@ export default function TicketFormModal({
 	const [maxQuantity, setMaxQuantity] = useState('10');
 	const [visibility, setVisibility] = useState<'public' | 'invited_only' | 'manual'>('public');
 
-	// Fetch service fee configuration
-	useEffect(() => {
-		const fetchConfig = async () => {
-			try {
-				const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL || 'http://localhost:8055';
-				// Fetch public configuration data (no auth needed)
-				const response = await fetch(`${directusUrl}/items/event_configurations`);
-				const data = await response.json();
-				if (response.ok && data.data) {
-					setServiceFeePercentage(parseFloat(data.data.service_fee_percentage) || 10);
-				}
-			} catch (error) {
-				console.error('Error fetching config:', error);
-			}
-		};
-
-		fetchConfig();
-	}, []);
+	// Service fee is set to default 10% - can be made configurable later if needed
 
 	// Load editing ticket data
 	useEffect(() => {
@@ -97,6 +83,17 @@ export default function TicketFormModal({
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+
+		if (!client) {
+			toast({
+				title: 'Erro',
+				description: 'Não autorizado',
+				variant: 'destructive',
+			});
+			
+return;
+		}
+
 		setIsLoading(true);
 
 		try {
@@ -108,7 +105,8 @@ export default function TicketFormModal({
 					variant: 'destructive',
 				});
 				setIsLoading(false);
-				return;
+				
+return;
 			}
 
 			// Validate required fields
@@ -119,7 +117,8 @@ export default function TicketFormModal({
 					variant: 'destructive',
 				});
 				setIsLoading(false);
-				return;
+				
+return;
 			}
 
 			if (ticketType === 'paid' && (!price || parseFloat(price) <= 0)) {
@@ -129,7 +128,8 @@ export default function TicketFormModal({
 					variant: 'destructive',
 				});
 				setIsLoading(false);
-				return;
+				
+return;
 			}
 
 			const ticketData: any = {
@@ -139,55 +139,24 @@ export default function TicketFormModal({
 				quantity: parseInt(quantity),
 				price: ticketType === 'paid' ? parseFloat(price) : 0,
 				service_fee_type: ticketType === 'paid' ? serviceFeeType : 'absorbed',
-				sale_start_date: saleStartDate || null,
-				sale_end_date: saleEndDate || null,
+				sale_start_date: saleStartDate ? new Date(saleStartDate).toISOString() : null,
+				sale_end_date: saleEndDate ? new Date(saleEndDate).toISOString() : null,
 				min_quantity_per_purchase: parseInt(minQuantity),
 				max_quantity_per_purchase: parseInt(maxQuantity),
 				visibility,
 				status: 'active',
 			};
 
-			console.log('Saving ticket with data:', ticketData);
+			console.log('Sending ticket data:', ticketData);
 
-			// Use Next.js API routes (cookies are sent automatically)
-			const url = editingTicket
-				? `/api/tickets/${editingTicket.id}`
-				: `/api/tickets`;
-
-			const response = await fetch(url, {
-				method: editingTicket ? 'PATCH' : 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				credentials: 'include', // Important: include cookies
-				body: JSON.stringify(ticketData),
-			});
-
-			if (!response.ok) {
-				const errorData = await response.json();
-				console.error('API Error:', errorData);
-
-				// Handle authentication errors
-				if (response.status === 401) {
-					toast({
-						title: 'Sessão Expirada',
-						description: 'Sua sessão expirou. Por favor, faça login novamente.',
-						variant: 'destructive',
-					});
-					// Redirect to login after a delay
-					setTimeout(() => {
-						window.location.href = '/login';
-					}, 2000);
-					return;
-				}
-
-				// Extract validation errors
-				if (errorData.errors && Array.isArray(errorData.errors)) {
-					const errorMessages = errorData.errors.map((err: any) => err.message).join(', ');
-					throw new Error(errorMessages);
-				}
-
-				throw new Error(errorData.message || 'Erro ao salvar ingresso');
+			if (editingTicket) {
+				await client.request(
+					updateItem('event_tickets', editingTicket.id, ticketData)
+				);
+			} else {
+				await client.request(
+					createItem('event_tickets', ticketData)
+				);
 			}
 
 			toast({
@@ -214,7 +183,7 @@ export default function TicketFormModal({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-			<div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+			<div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
 				{/* Header */}
 				<div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
 					<h2 className="text-2xl font-bold text-gray-900 dark:text-white">

@@ -1,95 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createDirectus, rest, authentication, refresh, readUser, withToken } from '@directus/sdk';
-import type { Schema } from '@/types/directus-schema';
+import { readMe } from '@directus/sdk';
+import { getAuthClient } from '@/lib/directus/directus';
 
 export async function POST(request: NextRequest) {
 	try {
-		// Read refresh token from httpOnly cookie
-		const refresh_token = request.cookies.get('directus_refresh_token')?.value;
+		const { refresh_token } = await request.json();
 
 		if (!refresh_token) {
 			return NextResponse.json(
 				{ error: 'Refresh token não fornecido' },
-				{ status: 400 }
+				{ status: 401 }
 			);
 		}
 
-		const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL as string;
+		// Use the auth client helper (includes rate limiting and retry logic)
+		const client = getAuthClient();
 
-		// Call Directus refresh endpoint directly
-		const response = await fetch(`${directusUrl}/auth/refresh`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({
-				refresh_token,
-				mode: 'json',
-			}),
-		});
+		// Refresh the access token - returns new { access_token, expires, refresh_token }
+		const authResult = await client.refresh();
 
-		if (!response.ok) {
+		if (!authResult.access_token) {
 			return NextResponse.json(
 				{ error: 'Falha ao renovar token' },
 				{ status: 401 }
 			);
 		}
 
-		const data = await response.json();
+		// Get user data using the new access token
+		const userData = await client.request(
+			readMe({
+				fields: ['*'],
+			})
+		);
 
-		if (!data.data?.access_token) {
-			return NextResponse.json(
-				{ error: 'Falha ao renovar token' },
-				{ status: 401 }
-			);
-		}
-
-		// Get user data
-		const meResponse = await fetch(`${directusUrl}/users/me?fields=id,email,first_name,last_name`, {
-			headers: {
-				'Authorization': `Bearer ${data.data.access_token}`,
-			},
-		});
-
-		const meData = await meResponse.json();
-
-		const nextResponse = NextResponse.json({
+		// Return new tokens and user data
+		return NextResponse.json({
 			success: true,
-			user: meData.data,
+			access_token: authResult.access_token,
+			refresh_token: authResult.refresh_token,
+			expires: authResult.expires,
+			user: userData
 		});
-
-		// Update cookies with new tokens
-		nextResponse.cookies.set('directus_token', data.data.access_token, {
-			httpOnly: true,
-			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'lax',
-			maxAge: data.data.expires ? data.data.expires / 1000 : 86400,
-		});
-
-		if (data.data.refresh_token) {
-			nextResponse.cookies.set('directus_refresh_token', data.data.refresh_token, {
-				httpOnly: true,
-				secure: process.env.NODE_ENV === 'production',
-				sameSite: 'lax',
-				maxAge: 604800, // 7 days
-			});
-		}
-
-		return nextResponse;
 	} catch (error: any) {
 		console.error('Refresh token error:', error);
 
-		if (error.errors) {
-			const firstError = error.errors[0];
-
-			return NextResponse.json(
-				{ error: firstError.message || 'Token expirado' },
-				{ status: 401 }
-			);
-		}
-
 		return NextResponse.json(
-			{ error: 'Erro ao renovar token. Faça login novamente.' },
+			{ error: 'Token expirado. Faça login novamente.' },
 			{ status: 401 }
 		);
 	}

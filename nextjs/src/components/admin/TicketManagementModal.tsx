@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { X, Plus, Ticket, Edit, Trash2 } from 'lucide-react';
+import { readItems, deleteItem } from '@directus/sdk';
+import { useDirectusClient } from '@/hooks/useDirectusClient';
 import { EventTicket } from '@/types/directus-schema';
 import TicketFormModal from './TicketFormModal';
 
@@ -18,6 +20,7 @@ export default function TicketManagementModal({
 	eventId,
 	onTicketsUpdate,
 }: TicketManagementModalProps) {
+	const client = useDirectusClient();
 	const [tickets, setTickets] = useState<EventTicket[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [showTicketForm, setShowTicketForm] = useState(false);
@@ -31,17 +34,17 @@ export default function TicketManagementModal({
 	}, [isOpen, eventId]);
 
 	const fetchTickets = async () => {
-		if (!eventId) return;
+		if (!eventId || !client) return;
 
 		try {
-			// Use Next.js API route (cookies sent automatically)
-			const response = await fetch(`/api/tickets?eventId=${eventId}`, {
-				credentials: 'include',
-			});
-			const data = await response.json();
-			if (response.ok && data.tickets) {
-				setTickets(data.tickets);
-			}
+			const data = await client.request(
+				readItems('event_tickets', {
+					filter: { event_id: { _eq: eventId } },
+					fields: ['*'],
+					sort: ['sort', 'date_created'],
+				})
+			);
+			setTickets(data || []);
 		} catch (error) {
 			console.error('Error fetching tickets:', error);
 		}
@@ -61,18 +64,12 @@ export default function TicketManagementModal({
 
 	const handleDeleteTicket = async (ticketId: string) => {
 		if (!confirm('Tem certeza que deseja excluir este ingresso?')) return;
+		if (!client) return;
 
 		try {
-			// Use Next.js API route (cookies sent automatically)
-			const response = await fetch(`/api/tickets/${ticketId}`, {
-				method: 'DELETE',
-				credentials: 'include',
-			});
-
-			if (response.ok) {
-				fetchTickets();
-				onTicketsUpdate?.();
-			}
+			await client.request(deleteItem('event_tickets', ticketId));
+			fetchTickets();
+			onTicketsUpdate?.();
 		} catch (error) {
 			console.error('Error deleting ticket:', error);
 		}

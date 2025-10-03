@@ -3,26 +3,33 @@
 import Link from 'next/link';
 import { Plus, Calendar, Users, MapPin } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { readItems } from '@directus/sdk';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDirectusClient } from '@/hooks/useDirectusClient';
 import { Event } from '@/types/directus-schema';
 
 export default function EventosPage() {
 	const { user } = useAuth();
+	const client = useDirectusClient();
 	const [events, setEvents] = useState<Event[]>([]);
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
 		const fetchEvents = async () => {
-			try {
-				// Use Next.js API route (cookies sent automatically)
-				const response = await fetch('/api/events', {
-					credentials: 'include',
-				});
+			if (!client) {
+				setLoading(false);
+				
+return;
+			}
 
-				const data = await response.json();
-				if (response.ok) {
-					setEvents(data.events || []);
-				}
+			try {
+				const data = await client.request(
+					readItems('events', {
+						fields: ['*', { category_id: ['*'] }, { cover_image: ['*'] }, { organizer_id: ['*'] }, { registrations: ['*'] }],
+						sort: ['-date_created'],
+					})
+				);
+				setEvents(data as Event[] || []);
 			} catch (error) {
 				console.error('Error fetching events:', error);
 			} finally {
@@ -32,14 +39,16 @@ export default function EventosPage() {
 
 		if (user) {
 			fetchEvents();
+		} else {
+			setLoading(false);
 		}
-	}, [user]);
+	}, [user, client]);
 
 	if (loading) {
 		return (
 			<div className="flex items-center justify-center min-h-[400px]">
 				<div className="text-center">
-					<div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+					<div className="inline-block animate-spin rounded-full size-8 border-b-2 border-accent"></div>
 					<p className="mt-4 text-gray-600 dark:text-gray-400">Carregando eventos...</p>
 				</div>
 			</div>
@@ -103,7 +112,8 @@ interface EventCardProps {
 function EventCard({ event }: EventCardProps) {
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString);
-		return date.toLocaleDateString('pt-BR', {
+		
+return date.toLocaleDateString('pt-BR', {
 			day: 'numeric',
 			month: 'long',
 			year: 'numeric',
@@ -133,7 +143,8 @@ function EventCard({ event }: EventCardProps) {
 		};
 
 		const statusInfo = statusMap[status || 'draft'];
-		return (
+		
+return (
 			<span className={`px-2 py-1 text-xs font-medium rounded ${statusInfo.className}`}>
 				{statusInfo.label}
 			</span>
@@ -147,7 +158,8 @@ function EventCard({ event }: EventCardProps) {
 		if (event.event_type === 'hybrid') {
 			return `${event.location_address || 'Híbrido'} (Online e Presencial)`;
 		}
-		return event.location_address || event.location_name || 'Local a definir';
+		
+return event.location_address || event.location_name || 'Local a definir';
 	};
 
 	// Count registrations (placeholder for now)

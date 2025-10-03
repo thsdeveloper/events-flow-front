@@ -50,7 +50,8 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
 				}
 
 				const data = await response.json();
-				return data.fileId;
+				
+return data.fileId;
 			} catch (error) {
 				console.error('Error uploading image:', error);
 				throw error;
@@ -65,13 +66,15 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
 		// Validate file type
 		if (!file.type.startsWith('image/')) {
 			alert('Por favor, selecione apenas arquivos de imagem');
-			return;
+			
+return;
 		}
 
 		// Validate file size (5MB max)
 		if (file.size > 5 * 1024 * 1024) {
 			alert('O arquivo deve ter no máximo 5MB');
-			return;
+			
+return;
 		}
 
 		// Store file for later upload

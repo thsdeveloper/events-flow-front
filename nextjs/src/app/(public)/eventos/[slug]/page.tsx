@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { fetchEventBySlug } from '@/lib/directus/fetchers';
 import DirectusImage from '@/components/shared/DirectusImage';
-import { Calendar, MapPin, Clock, Users, DollarSign, Globe, Share2 } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, DollarSign, Globe, Share2, Tag, Ticket, Building2, Mail, Phone, ExternalLink, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface EventPageProps {
 	params: Promise<{
@@ -83,6 +83,40 @@ return date.toLocaleTimeString('pt-BR', {
 		}
 	};
 
+	// Check if event has active tickets
+	const hasTickets = event.tickets && event.tickets.length > 0;
+	const eventOrganizer = event.organizer_id;
+	const eventCategory = event.category_id;
+
+	// Calculate ticket availability
+	const getTicketAvailability = (ticket: any) => {
+		const sold = ticket.quantity_sold || 0;
+		const total = ticket.quantity;
+		const available = total - sold;
+		const percentage = (sold / total) * 100;
+
+		return {
+			sold,
+			total,
+			available,
+			percentage,
+			isSoldOut: available <= 0,
+			isAlmostSoldOut: available <= total * 0.2 && available > 0
+		};
+	};
+
+	// Check if ticket sales are active
+	const isTicketSaleActive = (ticket: any) => {
+		const now = new Date();
+		const saleStart = ticket.sale_start_date ? new Date(ticket.sale_start_date) : null;
+		const saleEnd = ticket.sale_end_date ? new Date(ticket.sale_end_date) : null;
+
+		if (saleStart && now < saleStart) return false;
+		if (saleEnd && now > saleEnd) return false;
+
+		return true;
+	};
+
 	return (
 		<div className="min-h-screen bg-gray-50">
 			{/* Hero Section with Image */}
@@ -106,6 +140,19 @@ return date.toLocaleTimeString('pt-BR', {
 				{/* Event Title */}
 				<div className="absolute bottom-0 inset-x-0 p-8">
 					<div className="max-w-7xl mx-auto">
+						{/* Category Badge */}
+						{eventCategory && (
+							<div className="mb-3">
+								<span
+									className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium text-white/90 bg-white/20 backdrop-blur-sm"
+									style={{ backgroundColor: eventCategory.color ? `${eventCategory.color}40` : undefined }}
+								>
+									{eventCategory.icon && <span className="text-lg">{eventCategory.icon}</span>}
+									{eventCategory.name}
+								</span>
+							</div>
+						)}
+
 						<h1 className="text-4xl md:text-5xl font-bold text-white mb-4">{event.title}</h1>
 						<div className="flex flex-wrap gap-4 text-white/90">
 							<div className="flex items-center gap-2">
@@ -128,7 +175,7 @@ return date.toLocaleTimeString('pt-BR', {
 					<div className="lg:col-span-2 space-y-8">
 						{/* Description */}
 						<div className="bg-white rounded-2xl shadow-sm p-8">
-							<h2 className="text-2xl font-bold text-gray-900 mb-4">Descrição do evento</h2>
+							<h2 className="text-2xl font-bold text-gray-900 mb-4">Sobre o evento</h2>
 							{event.short_description && (
 								<p className="text-lg text-gray-700 mb-4 font-medium">{event.short_description}</p>
 							)}
@@ -138,7 +185,159 @@ return date.toLocaleTimeString('pt-BR', {
 									dangerouslySetInnerHTML={{ __html: event.description }}
 								/>
 							)}
+
+							{/* Tags */}
+							{event.tags && Array.isArray(event.tags) && event.tags.length > 0 && (
+								<div className="mt-6 pt-6 border-t border-gray-200">
+									<div className="flex flex-wrap gap-2">
+										{event.tags.map((tag, index) => (
+											<span
+												key={index}
+												className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium"
+											>
+												<Tag className="size-3" />
+												{tag}
+											</span>
+										))}
+									</div>
+								</div>
+							)}
 						</div>
+
+						{/* Tickets Section - Only for paid events */}
+						{!event.is_free && (
+							<div className="bg-white rounded-2xl shadow-sm p-8">
+								<h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+									<Ticket className="size-6 text-purple-600" />
+									Ingressos
+								</h2>
+
+								{hasTickets ? (
+									<div className="space-y-4">
+										{event.tickets?.map((ticket: any) => {
+											const availability = getTicketAvailability(ticket);
+											const saleActive = isTicketSaleActive(ticket);
+
+											return (
+												<div
+													key={ticket.id}
+													className="border border-gray-200 rounded-xl p-6 hover:border-purple-300 transition-colors"
+												>
+													<div className="flex items-start justify-between mb-3">
+														<div className="flex-1">
+															<h3 className="text-lg font-bold text-gray-900">{ticket.title}</h3>
+															{ticket.description && (
+																<p className="text-sm text-gray-600 mt-1">{ticket.description}</p>
+															)}
+														</div>
+														<div className="text-right ml-4">
+															<p className="text-2xl font-bold text-purple-600">
+																R$ {Number(ticket.buyer_price || ticket.price).toFixed(2)}
+															</p>
+															{ticket.service_fee_type === 'passed_to_buyer' && (
+																<p className="text-xs text-gray-500">+ taxa de serviço</p>
+															)}
+														</div>
+													</div>
+
+													{/* Availability Bar */}
+													<div className="mb-4">
+														<div className="flex justify-between text-sm mb-2">
+															<span className="text-gray-600">
+																{availability.available} de {availability.total} disponíveis
+															</span>
+															<span className="text-gray-600">
+																{availability.percentage.toFixed(0)}% vendidos
+															</span>
+														</div>
+														<div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+															<div
+																className={`h-full rounded-full transition-all ${
+																	availability.isSoldOut
+																		? 'bg-red-500'
+																		: availability.isAlmostSoldOut
+																			? 'bg-orange-500'
+																			: 'bg-purple-600'
+																}`}
+																style={{ width: `${availability.percentage}%` }}
+															/>
+														</div>
+													</div>
+
+													{/* Status and Actions */}
+													<div className="flex items-center justify-between">
+														<div className="flex items-center gap-2">
+															{availability.isSoldOut ? (
+																<span className="inline-flex items-center gap-1 text-sm font-medium text-red-600">
+																	<AlertCircle className="size-4" />
+																	Esgotado
+																</span>
+															) : availability.isAlmostSoldOut ? (
+																<span className="inline-flex items-center gap-1 text-sm font-medium text-orange-600">
+																	<AlertCircle className="size-4" />
+																	Últimas vagas!
+																</span>
+															) : (
+																<span className="inline-flex items-center gap-1 text-sm font-medium text-green-600">
+																	<CheckCircle className="size-4" />
+																	Disponível
+																</span>
+															)}
+														</div>
+
+														{!availability.isSoldOut && saleActive && (
+															<button className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors">
+																Selecionar
+															</button>
+														)}
+													</div>
+
+													{/* Sale period info */}
+													{(ticket.sale_start_date || ticket.sale_end_date) && (
+														<div className="mt-3 pt-3 border-t border-gray-100">
+															<p className="text-xs text-gray-500">
+																{ticket.sale_start_date && new Date(ticket.sale_start_date) > new Date() && (
+																	<>Vendas iniciam em {formatDate(ticket.sale_start_date)}</>
+																)}
+																{ticket.sale_end_date && (
+																	<>Vendas até {formatDate(ticket.sale_end_date)}</>
+																)}
+															</p>
+														</div>
+													)}
+												</div>
+											);
+										})}
+									</div>
+								) : (
+									<div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center">
+										<div className="flex flex-col items-center gap-4">
+											<div className="bg-gray-100 rounded-full p-4">
+												<Ticket className="size-8 text-gray-400" />
+											</div>
+											<div>
+												<h3 className="text-lg font-semibold text-gray-900 mb-2">
+													Ingressos em breve
+												</h3>
+												<p className="text-gray-600 max-w-md">
+													Os ingressos para este evento ainda não estão disponíveis para compra.
+													Volte em breve ou entre em contato com o organizador para mais informações.
+												</p>
+											</div>
+											{eventOrganizer && eventOrganizer.email && (
+												<a
+													href={`mailto:${eventOrganizer.email}`}
+													className="mt-2 inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 font-medium"
+												>
+													<Mail className="size-4" />
+													Entrar em contato
+												</a>
+											)}
+										</div>
+									</div>
+								)}
+							</div>
+						)}
 
 						{/* Location */}
 						{(event.location_name || event.location_address) && (
@@ -165,10 +364,74 @@ return date.toLocaleTimeString('pt-BR', {
 									href={event.online_url}
 									target="_blank"
 									rel="noopener noreferrer"
-									className="text-purple-600 hover:text-purple-700 underline break-all"
+									className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 underline break-all"
 								>
 									{event.online_url}
+									<ExternalLink className="size-4" />
 								</a>
+							</div>
+						)}
+
+						{/* Organizer Info */}
+						{eventOrganizer && (
+							<div className="bg-white rounded-2xl shadow-sm p-8">
+								<h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+									<Building2 className="size-6 text-purple-600" />
+									Organizador
+								</h2>
+								<div className="flex items-start gap-6">
+									{eventOrganizer.logo && (
+										<div className="flex-shrink-0">
+											<DirectusImage
+												uuid={typeof eventOrganizer.logo === 'string' ? eventOrganizer.logo : eventOrganizer.logo.id}
+												alt={eventOrganizer.name || 'Organizador'}
+												width={80}
+												height={80}
+												className="rounded-lg object-cover"
+											/>
+										</div>
+									)}
+									<div className="flex-1">
+										<h3 className="text-xl font-bold text-gray-900 mb-2">{eventOrganizer.name}</h3>
+										{eventOrganizer.description && (
+											<div
+												className="prose prose-sm text-gray-600 mb-4"
+												dangerouslySetInnerHTML={{ __html: eventOrganizer.description }}
+											/>
+										)}
+										<div className="space-y-2">
+											{eventOrganizer.email && (
+												<div className="flex items-center gap-2 text-sm text-gray-600">
+													<Mail className="size-4 text-purple-600" />
+													<a href={`mailto:${eventOrganizer.email}`} className="hover:text-purple-600">
+														{eventOrganizer.email}
+													</a>
+												</div>
+											)}
+											{eventOrganizer.phone && (
+												<div className="flex items-center gap-2 text-sm text-gray-600">
+													<Phone className="size-4 text-purple-600" />
+													<a href={`tel:${eventOrganizer.phone}`} className="hover:text-purple-600">
+														{eventOrganizer.phone}
+													</a>
+												</div>
+											)}
+											{eventOrganizer.website && (
+												<div className="flex items-center gap-2 text-sm text-gray-600">
+													<Globe className="size-4 text-purple-600" />
+													<a
+														href={eventOrganizer.website}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="hover:text-purple-600"
+													>
+														{eventOrganizer.website}
+													</a>
+												</div>
+											)}
+										</div>
+									</div>
+								</div>
 							</div>
 						)}
 					</div>
@@ -184,22 +447,54 @@ return date.toLocaleTimeString('pt-BR', {
 											<p className="text-sm text-gray-600 mb-2">Entrada</p>
 											<p className="text-4xl font-bold text-green-600">Gratuita</p>
 										</div>
+									) : hasTickets ? (
+										<div>
+											<p className="text-sm text-gray-600 mb-2">Ingressos a partir de</p>
+											<p className="text-4xl font-bold text-gray-900">
+												R${' '}
+												{Math.min(
+													...(event.tickets?.map((t: any) => Number(t.buyer_price || t.price)) || [0])
+												).toFixed(2)}
+											</p>
+										</div>
 									) : (
 										<div>
-											<p className="text-sm text-gray-600 mb-2">Ingressos entre</p>
-											<p className="text-4xl font-bold text-gray-900">
-												R$ {Number(event.price || 0).toFixed(2)}
-											</p>
+											<div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+												<AlertCircle className="size-6 text-amber-600 mx-auto mb-2" />
+												<p className="text-sm text-amber-800 font-medium">
+													Ingressos indisponíveis
+												</p>
+											</div>
+											{event.price && event.price > 0 && (
+												<div>
+													<p className="text-sm text-gray-600 mb-2">Preço estimado</p>
+													<p className="text-3xl font-bold text-gray-900">
+														R$ {Number(event.price).toFixed(2)}
+													</p>
+												</div>
+											)}
 										</div>
 									)}
 								</div>
 
-								<button className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-colors duration-200 text-lg">
-									Comprar ingressos
-								</button>
-
-								{!event.is_free && (
-									<p className="text-center text-sm text-gray-500 mt-4">Parcele em até 12x</p>
+								{event.is_free ? (
+									<button className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-xl transition-colors duration-200 text-lg">
+										Inscrever-se gratuitamente
+									</button>
+								) : hasTickets ? (
+									<>
+										<button className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-colors duration-200 text-lg">
+											Comprar ingressos
+										</button>
+										<p className="text-center text-sm text-gray-500 mt-4">Parcele em até 12x</p>
+									</>
+								) : (
+									<button
+										disabled
+										className="w-full bg-gray-300 text-gray-500 font-bold py-4 px-6 rounded-xl cursor-not-allowed text-lg"
+									>
+										Compra indisponível
+									</button>
 								)}
 							</div>
 
@@ -245,6 +540,22 @@ return date.toLocaleTimeString('pt-BR', {
 										</p>
 									</div>
 								</div>
+
+								{(event.registration_start || event.registration_end) && (
+									<div className="pt-4 border-t border-gray-100">
+										<p className="font-semibold text-gray-900 mb-2 text-sm">Período de Inscrições</p>
+										{event.registration_start && (
+											<p className="text-xs text-gray-600">
+												Início: {formatDate(event.registration_start)}
+											</p>
+										)}
+										{event.registration_end && (
+											<p className="text-xs text-gray-600">
+												Término: {formatDate(event.registration_end)}
+											</p>
+										)}
+									</div>
+								)}
 							</div>
 
 							{/* Share Button */}

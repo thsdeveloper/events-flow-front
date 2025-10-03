@@ -1,39 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createDirectus, rest, readMe, readUser, withToken } from '@directus/sdk';
-import type { Schema } from '@/types/directus-schema';
+import { readMe } from '@directus/sdk';
+import { getAuthenticatedClient } from '@/lib/directus/directus';
 
 export async function GET(request: NextRequest) {
 	try {
-		// Read token from httpOnly cookie
-		const token = request.cookies.get('directus_token')?.value;
+		// Get token from Authorization header
+		const authHeader = request.headers.get('authorization');
 
-		if (!token) {
+		if (!authHeader || !authHeader.startsWith('Bearer ')) {
 			return NextResponse.json(
 				{ error: 'Token não fornecido' },
 				{ status: 401 }
 			);
 		}
 
-		const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL as string;
-		const client = createDirectus<Schema>(directusUrl).with(rest());
+		const token = authHeader.replace('Bearer ', '');
 
-		// Get user data using the user's token
+		// Use the authenticated client helper
+		const client = getAuthenticatedClient(token);
+
+		// Get user data with all relations
 		const userData = await client.request(
-			withToken(
-				token,
-				readMe({
-					fields: ['id', 'email', 'first_name', 'last_name'],
-				})
-			)
+			readMe({
+				fields: ['*', { role: ['*'] }, { avatar: ['*'] }],
+			})
 		);
 
 		return NextResponse.json({
-			user: {
-				id: userData.id,
-				email: userData.email,
-				first_name: userData.first_name,
-				last_name: userData.last_name,
-			}
+			user: userData
 		});
 	} catch (error: any) {
 		console.error('Get user error:', error);

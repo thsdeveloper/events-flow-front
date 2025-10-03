@@ -4,11 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, AlertCircle, X } from 'lucide-react';
 import Link from 'next/link';
-import { readMe, readItems, createItem } from '@directus/sdk';
-import { useAuth } from '@/contexts/AuthContext';
+import { readItem, readItems, updateItem } from '@directus/sdk';
 import { useDirectusClient } from '@/hooks/useDirectusClient';
 import { useToast } from '@/hooks/use-toast';
-import { EventCategory } from '@/types/directus-schema';
+import { Event, EventCategory } from '@/types/directus-schema';
 import {
 	Select,
 	SelectContent,
@@ -17,16 +16,20 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 import ImageUpload, { ImageUploadRef } from '@/components/admin/ImageUpload';
-import TicketManagementModal from '@/components/admin/TicketManagementModal';
 
-export default function NovoEventoPage() {
+interface PageProps {
+	params: Promise<{ evento_id: string }>;
+}
+
+export default function EditarEventoPage({ params }: PageProps) {
 	const router = useRouter();
-	const { user } = useAuth();
 	const client = useDirectusClient();
 	const { toast } = useToast();
+	const [id, setId] = useState<string>('');
 	const [isLoading, setIsLoading] = useState(false);
-	const [hasOrganizer, setHasOrganizer] = useState<boolean | null>(null);
-	const [checkingOrganizer, setCheckingOrganizer] = useState(true);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+	const [event, setEvent] = useState<Event | null>(null);
 	const [categories, setCategories] = useState<EventCategory[]>([]);
 	const [eventType, setEventType] = useState<'in_person' | 'online' | 'hybrid'>('in_person');
 	const [isFree, setIsFree] = useState(true);
@@ -36,56 +39,53 @@ export default function NovoEventoPage() {
 	const [categoryId, setCategoryId] = useState('');
 	const [coverImage, setCoverImage] = useState<string | null>(null);
 	const imageUploadRef = useRef<ImageUploadRef>(null);
-	const [showTicketModal, setShowTicketModal] = useState(false);
-	const [createdEventId, setCreatedEventId] = useState<string | null>(null);
 
-	// Check if user has organizer profile and fetch categories
 	useEffect(() => {
-		const checkOrganizerProfile = async () => {
-			if (!client || !user?.id) {
-				setCheckingOrganizer(false);
-				setHasOrganizer(false);
-				
-return;
-			}
+		params.then((p) => setId(p.evento_id)).catch(console.error);
+	}, [params]);
 
+	// Fetch event data and categories
+	useEffect(() => {
+		if (!id || !client) return;
+
+		const fetchData = async () => {
 			try {
-				const organizers = await client.request(
-					readItems('organizers', {
-						filter: { user_id: { _eq: user.id } },
-						limit: 1,
+				// Fetch event with tickets
+				const eventData = await client.request(
+					readItem('events', id, {
+						fields: ['*', { category_id: ['*'] }, { cover_image: ['*'] }, { tickets: ['*'] }],
 					})
 				);
-				setHasOrganizer(!!organizers && organizers.length > 0);
-			} catch (error) {
-				console.error('Error checking organizer:', error);
-				setHasOrganizer(false);
-			} finally {
-				setCheckingOrganizer(false);
-			}
-		};
 
-		const fetchCategories = async () => {
-			if (!client) return;
+				setEvent(eventData as Event);
 
-			try {
-				const data = await client.request(
+				// Set form values from event data
+				setStatus(eventData.status || 'draft');
+				setEventType(eventData.event_type || 'in_person');
+				setIsFree(eventData.is_free || false);
+				setCategoryId(eventData.category_id?.id || '');
+				setTags(Array.isArray(eventData.tags) ? eventData.tags : []);
+				setCoverImage(eventData.cover_image?.id || null);
+
+				// Fetch categories
+				const categoriesData = await client.request(
 					readItems('event_categories', {
 						sort: ['name'],
 						limit: -1,
 					})
 				);
-				setCategories(data);
-			} catch (error) {
-				console.error('Error fetching categories:', error);
+				setCategories(categoriesData);
+
+				setLoading(false);
+			} catch (error: any) {
+				console.error('Error fetching data:', error);
+				setError(error.message || 'Erro ao carregar evento');
+				setLoading(false);
 			}
 		};
 
-		checkOrganizerProfile();
-		if (client) {
-			fetchCategories();
-		}
-	}, [user, client]);
+		fetchData();
+	}, [id, client]);
 
 	const addTag = () => {
 		if (currentTag.trim() && !tags.includes(currentTag.trim())) {
@@ -110,6 +110,20 @@ return;
 		setIsLoading(true);
 
 		try {
+			// Se o evento está sendo marcado como gratuito, verificar se há ingressos
+			if (isFree && event) {
+				const tickets = Array.isArray(event.tickets) ? event.tickets : [];
+				if (tickets.length > 0) {
+					toast({
+						title: 'Não é possível salvar',
+						description: `Este evento possui ${tickets.length} ingresso(s) cadastrado(s). Remova todos os ingressos antes de marcá-lo como gratuito.`,
+						variant: 'destructive',
+					});
+					setIsLoading(false);
+					return;
+				}
+			}
+
 			const formData = new FormData(e.currentTarget);
 
 			// Upload image first if there's a new one
@@ -124,8 +138,7 @@ return;
 						variant: 'destructive',
 					});
 					setIsLoading(false);
-					
-return;
+					return;
 				}
 			}
 
@@ -152,8 +165,7 @@ return;
 					variant: 'destructive',
 				});
 				setIsLoading(false);
-				
-return;
+				return;
 			}
 
 			// Create event data
@@ -183,53 +195,20 @@ return;
 				throw new Error('Não autorizado');
 			}
 
-			// Get user and organizer
-			const userData = await client.request(readMe({ fields: ['id'] }));
-			const organizers = await client.request(
-				readItems('organizers', {
-					filter: { user_id: { _eq: userData.id } },
-					limit: 1,
-				})
-			);
-
-			if (!organizers || organizers.length === 0) {
-				throw new Error('Você precisa criar um perfil de organizador primeiro');
-			}
-
-			// Add organizer_id to event data
-			eventData.organizer_id = organizers[0].id;
-
-			// Generate slug from title
-			const slug = title
-				.toLowerCase()
-				.normalize('NFD')
-				.replace(/[\u0300-\u036f]/g, '')
-				.replace(/[^a-z0-9]+/g, '-')
-				.replace(/^-+|-+$/g, '')
-				+ '-' + Math.random().toString(36).substring(2, 8);
-
-			eventData.slug = slug;
-
-			// Create event
-			const data = await client.request(
-				createItem('events', eventData)
-			);
+			// Update event
+			await client.request(updateItem('events', id, eventData));
 
 			toast({
 				title: 'Sucesso',
-				description: 'Evento criado com sucesso!',
+				description: 'Evento atualizado com sucesso!',
 			});
 
-			// Save event ID and show ticket management option
-			setCreatedEventId(data?.id || null);
-
-			// Optionally navigate after a delay to allow ticket setup
-			// router.push('/admin-eventos');
+			router.push(`/admin-eventos/${id}`);
 		} catch (error: any) {
-			console.error('Error creating event:', error);
+			console.error('Error updating event:', error);
 			toast({
 				title: 'Erro',
-				description: error.message || 'Erro ao criar evento',
+				description: error.message || 'Erro ao atualizar evento',
 				variant: 'destructive',
 			});
 		} finally {
@@ -237,12 +216,31 @@ return;
 		}
 	};
 
-	if (checkingOrganizer) {
+	if (loading) {
 		return (
 			<div className="flex items-center justify-center min-h-[400px]">
 				<div className="text-center">
 					<div className="inline-block animate-spin rounded-full size-8 border-b-2 border-accent"></div>
-					<p className="mt-4 text-gray-600 dark:text-gray-400">Verificando perfil...</p>
+					<p className="mt-4 text-gray-600 dark:text-gray-400">Carregando evento...</p>
+				</div>
+			</div>
+		);
+	}
+
+	if (error || !event) {
+		return (
+			<div className="space-y-6">
+				<div className="flex items-center gap-4">
+					<Link
+						href="/admin-eventos"
+						className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+					>
+						<ArrowLeft className="size-5" />
+					</Link>
+					<h1 className="text-3xl font-bold text-gray-900 dark:text-white">Erro</h1>
+				</div>
+				<div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+					<p className="text-red-600 dark:text-red-400">{error || 'Evento não encontrado'}</p>
 				</div>
 			</div>
 		);
@@ -252,58 +250,22 @@ return;
 		<div className="space-y-6">
 			<div className="flex items-center gap-4">
 				<Link
-					href="/admin-eventos"
+					href={`/admin-eventos/${id}`}
 					className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
 				>
 					<ArrowLeft className="size-5" />
 				</Link>
 				<div>
 					<h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-						Criar Novo Evento
+						Editar Evento
 					</h1>
 					<p className="text-gray-600 dark:text-gray-400 mt-1">
-						Preencha os dados do seu evento
+						{event.title}
 					</p>
 				</div>
 			</div>
 
-			{/* Warning if no organizer profile */}
-			{hasOrganizer === false && (
-				<div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-6 rounded-lg">
-					<div className="flex items-start gap-4">
-						<AlertCircle className="size-6 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
-						<div className="flex-1">
-							<h3 className="text-lg font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
-								Perfil de Organizador Necessário
-							</h3>
-							<p className="text-yellow-700 dark:text-yellow-300 mb-4">
-								Para criar eventos, você precisa primeiro cadastrar seu perfil como organizador.
-								O perfil de organizador permite que você gerencie seus eventos, acompanhe inscrições
-								e tenha acesso a todas as funcionalidades da plataforma.
-							</p>
-							<div className="flex gap-3">
-								<Link
-									href="/account"
-									className="inline-flex items-center gap-2 px-5 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors font-medium"
-								>
-									Criar Perfil de Organizador
-								</Link>
-								<Link
-									href="/admin-eventos"
-									className="inline-flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-gray-800 border border-yellow-300 dark:border-yellow-700 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-lg transition-colors"
-								>
-									Voltar
-								</Link>
-							</div>
-						</div>
-					</div>
-				</div>
-			)}
-
-			<form
-				onSubmit={handleSubmit}
-				className={`space-y-6 ${hasOrganizer === false ? 'opacity-50 pointer-events-none' : ''}`}
-			>
+			<form onSubmit={handleSubmit} className="space-y-6">
 				{/* Status e Publicação */}
 				<div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 space-y-4">
 					<h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
@@ -379,6 +341,7 @@ return;
 							type="checkbox"
 							name="featured"
 							id="featured"
+							defaultChecked={event.featured || false}
 							className="size-4 text-accent border-gray-300 rounded focus:ring-accent"
 						/>
 						<label htmlFor="featured" className="text-sm text-gray-700 dark:text-gray-300">
@@ -409,6 +372,7 @@ return;
 							type="text"
 							name="title"
 							required
+							defaultValue={event.title}
 							className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent focus:border-transparent"
 							placeholder="Ex: Workshop de React Avançado"
 						/>
@@ -422,6 +386,7 @@ return;
 							type="text"
 							name="short_description"
 							maxLength={160}
+							defaultValue={event.short_description || ''}
 							className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent focus:border-transparent"
 							placeholder="Uma breve descrição para listagens (máx. 160 caracteres)"
 						/>
@@ -438,6 +403,7 @@ return;
 							name="description"
 							required
 							rows={6}
+							defaultValue={event.description}
 							className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent focus:border-transparent"
 							placeholder="Descreva detalhadamente seu evento: conteúdo, objetivos, o que os participantes vão aprender..."
 						/>
@@ -503,6 +469,7 @@ return;
 								type="datetime-local"
 								name="start_date"
 								required
+								defaultValue={event.start_date ? new Date(event.start_date).toISOString().slice(0, 16) : ''}
 								className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent focus:border-transparent"
 							/>
 						</div>
@@ -514,6 +481,7 @@ return;
 							<input
 								type="datetime-local"
 								name="end_date"
+								defaultValue={event.end_date ? new Date(event.end_date).toISOString().slice(0, 16) : ''}
 								className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent focus:border-transparent"
 							/>
 						</div>
@@ -531,6 +499,7 @@ return;
 								<input
 									type="datetime-local"
 									name="registration_start"
+									defaultValue={event.registration_start ? new Date(event.registration_start).toISOString().slice(0, 16) : ''}
 									className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent focus:border-transparent"
 								/>
 							</div>
@@ -542,6 +511,7 @@ return;
 								<input
 									type="datetime-local"
 									name="registration_end"
+									defaultValue={event.registration_end ? new Date(event.registration_end).toISOString().slice(0, 16) : ''}
 									className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent focus:border-transparent"
 								/>
 							</div>
@@ -619,6 +589,7 @@ return;
 								<input
 									type="text"
 									name="location_name"
+									defaultValue={event.location_name || ''}
 									className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent focus:border-transparent"
 									placeholder="Ex: Teatro Municipal, Centro de Convenções"
 								/>
@@ -631,6 +602,7 @@ return;
 								<input
 									type="text"
 									name="location_address"
+									defaultValue={event.location_address || ''}
 									className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent focus:border-transparent"
 									placeholder="Ex: Av. Paulista, 1000 - Bela Vista, São Paulo - SP"
 								/>
@@ -646,6 +618,7 @@ return;
 							<input
 								type="url"
 								name="online_url"
+								defaultValue={event.online_url || ''}
 								className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent focus:border-transparent"
 								placeholder="https://zoom.us/j/123456789 ou https://meet.google.com/..."
 							/>
@@ -655,20 +628,9 @@ return;
 
 				{/* Ingressos e Vagas */}
 				<div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 space-y-4">
-					<div className="flex items-center justify-between">
-						<h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-							🎫 Ingressos e Vagas
-						</h2>
-						{createdEventId && !isFree && (
-							<button
-								type="button"
-								onClick={() => setShowTicketModal(true)}
-								className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-							>
-								Gerenciar Ingressos
-							</button>
-						)}
-					</div>
+					<h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+						🎫 Ingressos e Vagas
+					</h2>
 
 					<div className="flex items-center gap-2 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
 						<input
@@ -684,28 +646,12 @@ return;
 						</label>
 					</div>
 
-					{isFree ? (
-						<div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-							<p className="text-sm text-blue-800 dark:text-blue-300">
-								ℹ️ <strong>Eventos Gratuitos:</strong> Como este é um evento gratuito, não é necessário criar ingressos. Os participantes poderão se inscrever diretamente sem custo.
+					{isFree && (
+						<div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+							<p className="text-sm text-yellow-800 dark:text-yellow-300">
+								⚠️ <strong>Atenção:</strong> Ao marcar este evento como gratuito, você não poderá cadastrar ingressos. Se você já possui ingressos cadastrados, eles deverão ser removidos antes de salvar.
 							</p>
 						</div>
-					) : (
-						<>
-							{!createdEventId ? (
-								<div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-									<p className="text-sm text-blue-800 dark:text-blue-300">
-										💡 <strong>Dica:</strong> Primeiro salve o evento, depois você poderá criar e gerenciar diferentes tipos de ingressos (gratuitos, pagos, meia-entrada, VIP, etc.) com controle de quantidade, período de vendas e muito mais.
-									</p>
-								</div>
-							) : (
-								<div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-									<p className="text-sm text-green-800 dark:text-green-300">
-										✅ Evento criado! Agora você pode adicionar ingressos clicando no botão "Gerenciar Ingressos" acima.
-									</p>
-								</div>
-							)}
-						</>
 					)}
 
 					<div>
@@ -716,6 +662,7 @@ return;
 							type="number"
 							name="max_attendees"
 							min="1"
+							defaultValue={event.max_attendees || ''}
 							className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent focus:border-transparent"
 							placeholder="Ex: 100 (deixe vazio para vagas ilimitadas)"
 						/>
@@ -729,29 +676,19 @@ return;
 				<div className="flex gap-4 pt-4">
 					<button
 						type="submit"
-						disabled={isLoading || hasOrganizer === false}
+						disabled={isLoading}
 						className="px-6 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 					>
-						{isLoading ? 'Criando...' : 'Criar Evento'}
+						{isLoading ? 'Salvando...' : 'Salvar Alterações'}
 					</button>
 					<Link
-						href="/admin-eventos"
+						href={`/admin-eventos/${id}`}
 						className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
 					>
 						Cancelar
 					</Link>
 				</div>
 			</form>
-
-			{/* Ticket Management Modal */}
-			<TicketManagementModal
-				isOpen={showTicketModal}
-				onClose={() => setShowTicketModal(false)}
-				eventId={createdEventId}
-				onTicketsUpdate={() => {
-					// Refresh or handle ticket updates if needed
-				}}
-			/>
 		</div>
 	);
 }
