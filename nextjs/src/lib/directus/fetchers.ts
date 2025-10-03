@@ -401,7 +401,7 @@ export const fetchPaginatedPosts = async (limit: number, page: number) => {
 				limit,
 				page,
 				sort: ['-published_at'],
-				fields: ['id', 'title', 'description', 'slug', 'image'],
+				fields: ['id', 'title', 'description', 'slug', 'image', 'name'],
 				filter: { status: { _eq: 'published' } },
 			}),
 		);

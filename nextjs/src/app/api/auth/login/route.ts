@@ -28,23 +28,14 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Get user ID from basic readMe
-		const basicUser = await client.request(readMe());
-
-		// Use admin token to fetch full user data
-		const adminToken = process.env.DIRECTUS_ADMIN_TOKEN || process.env.DIRECTUS_PUBLIC_TOKEN;
-		const adminClient = createDirectus<Schema>(directusUrl).with(rest());
-
-		const userData = await adminClient.request(
-			withToken(
-				adminToken as string,
-				readUser(basicUser.id, {
-					fields: ['id', 'email', 'first_name', 'last_name'],
-				})
-			)
+		// Get user data using the logged in user's token
+		const userData = await client.request(
+			readMe({
+				fields: ['id', 'email', 'first_name', 'last_name'],
+			})
 		);
 
-		return NextResponse.json({
+		const response = NextResponse.json({
 			success: true,
 			access_token: loginResult.access_token,
 			refresh_token: loginResult.refresh_token,
@@ -56,12 +47,32 @@ export async function POST(request: NextRequest) {
 				last_name: userData.last_name,
 			}
 		});
+
+		// Set cookies for middleware authentication
+		response.cookies.set('directus_token', loginResult.access_token, {
+			httpOnly: true,
+			secure: process.env.NODE_ENV === 'production',
+			sameSite: 'lax',
+			maxAge: loginResult.expires ? loginResult.expires / 1000 : 86400, // 24h default
+		});
+
+		if (loginResult.refresh_token) {
+			response.cookies.set('directus_refresh_token', loginResult.refresh_token, {
+				httpOnly: true,
+				secure: process.env.NODE_ENV === 'production',
+				sameSite: 'lax',
+				maxAge: 604800, // 7 days
+			});
+		}
+
+		return response;
 	} catch (error: any) {
 		console.error('Login error:', error);
 
 		if (error.errors) {
 			const firstError = error.errors[0];
-			return NextResponse.json(
+			
+return NextResponse.json(
 				{ error: firstError.message || 'Credenciais inválidas' },
 				{ status: 401 }
 			);

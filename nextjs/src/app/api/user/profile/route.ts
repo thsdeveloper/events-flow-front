@@ -4,7 +4,9 @@ const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL as string;
 
 export async function PATCH(request: NextRequest) {
 	try {
-		const token = request.headers.get('authorization')?.replace('Bearer ', '');
+		// Read token from cookie first, then fall back to Authorization header
+		const token = request.cookies.get('directus_token')?.value ||
+		              request.headers.get('authorization')?.replace('Bearer ', '');
 
 		if (!token) {
 			return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
@@ -35,14 +37,12 @@ export async function PATCH(request: NextRequest) {
 		if (body.description !== undefined) updateData.description = body.description;
 		if (body.avatar) updateData.avatar = body.avatar;
 
-		// Use admin token to update user (bypass permissions)
-		const adminToken = process.env.DIRECTUS_ADMIN_TOKEN || process.env.DIRECTUS_PUBLIC_TOKEN;
-
+		// Use user's token to update their own profile
 		const response = await fetch(`${directusUrl}/users/${userId}`, {
 			method: 'PATCH',
 			headers: {
 				'Content-Type': 'application/json',
-				Authorization: `Bearer ${adminToken}`,
+				Authorization: `Bearer ${token}`,
 			},
 			body: JSON.stringify(updateData),
 		});
@@ -58,7 +58,8 @@ export async function PATCH(request: NextRequest) {
 		return NextResponse.json({ user: data.data });
 	} catch (error: any) {
 		console.error('Error updating profile:', error);
-		return NextResponse.json(
+		
+return NextResponse.json(
 			{ error: error.message || 'Erro ao atualizar perfil' },
 			{ status: 500 }
 		);
@@ -67,7 +68,9 @@ export async function PATCH(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
 	try {
-		const token = request.headers.get('authorization')?.replace('Bearer ', '');
+		// Read token from cookie first, then fall back to Authorization header
+		const token = request.cookies.get('directus_token')?.value ||
+		              request.headers.get('authorization')?.replace('Bearer ', '');
 
 		if (!token) {
 			return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
@@ -80,16 +83,14 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: 'Nenhum arquivo enviado' }, { status: 400 });
 		}
 
-		// Upload file using fetch with admin token
+		// Upload file using user's token
 		const uploadFormData = new FormData();
 		uploadFormData.append('file', file);
-
-		const adminToken = process.env.DIRECTUS_ADMIN_TOKEN || process.env.DIRECTUS_PUBLIC_TOKEN;
 
 		const response = await fetch(`${directusUrl}/files`, {
 			method: 'POST',
 			headers: {
-				Authorization: `Bearer ${adminToken}`,
+				Authorization: `Bearer ${token}`,
 			},
 			body: uploadFormData,
 		});
@@ -104,6 +105,7 @@ export async function POST(request: NextRequest) {
 		return NextResponse.json({ file: data.data });
 	} catch (error: any) {
 		console.error('Error uploading file:', error);
-		return NextResponse.json({ error: error.message || 'Erro ao fazer upload' }, { status: 500 });
+		
+return NextResponse.json({ error: error.message || 'Erro ao fazer upload' }, { status: 500 });
 	}
 }

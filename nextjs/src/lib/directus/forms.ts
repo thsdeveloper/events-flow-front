@@ -1,4 +1,5 @@
-import { useDirectus } from './directus';
+import { getAuthenticatedClient } from './directus';
+import { uploadFiles, createItem } from '@directus/sdk';
 import type { FormSubmission, FormSubmissionValue } from '@/types/directus-schema';
 
 
@@ -7,12 +8,13 @@ export const submitForm = async (
 	fields: { id: string; name: string; type: string }[],
 	data: Record<string, any>,
 ) => {
-	const { directus, uploadFiles, createItem, withToken } = useDirectus();
 	const TOKEN = process.env.DIRECTUS_FORM_TOKEN;
 
 	if (!TOKEN) {
 		throw new Error('DIRECTUS_FORM_TOKEN is not defined. Check your .env file.');
 	}
+
+	const directus = getAuthenticatedClient(TOKEN);
 
 	try {
 		const submissionValues: Omit<FormSubmissionValue, 'id'>[] = [];
@@ -26,7 +28,7 @@ export const submitForm = async (
 				const formData = new FormData();
 				formData.append('file', value);
 
-				const uploadedFile = await directus.request(withToken(TOKEN, uploadFiles(formData)));
+				const uploadedFile = await directus.request(uploadFiles(formData));
 
 				if (uploadedFile && 'id' in uploadedFile) {
 					submissionValues.push({
@@ -47,7 +49,7 @@ export const submitForm = async (
 			values: submissionValues,
 		};
 
-		await directus.request(withToken(TOKEN, createItem('form_submissions', payload as Omit<FormSubmission, 'id'>)));
+		await directus.request(createItem('form_submissions', payload as Omit<FormSubmission, 'id'>));
 	} catch (error) {
 		console.error('Error submitting form:', error);
 		throw new Error('Failed to submit form');

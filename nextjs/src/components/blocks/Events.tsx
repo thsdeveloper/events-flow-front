@@ -55,7 +55,8 @@ const Events = ({ data }: EventsProps) => {
 
 		updateItemsPerView();
 		window.addEventListener('resize', updateItemsPerView);
-		return () => window.removeEventListener('resize', updateItemsPerView);
+		
+return () => window.removeEventListener('resize', updateItemsPerView);
 	}, []);
 
 	const maxIndex = Math.max(0, events.length - itemsPerView);
@@ -70,7 +71,8 @@ const Events = ({ data }: EventsProps) => {
 
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString);
-		return date.toLocaleDateString('pt-BR', {
+		
+return date.toLocaleDateString('pt-BR', {
 			day: '2-digit',
 			month: 'short',
 			year: 'numeric',
@@ -79,7 +81,8 @@ const Events = ({ data }: EventsProps) => {
 
 	const formatTime = (dateString: string) => {
 		const date = new Date(dateString);
-		return date.toLocaleTimeString('pt-BR', {
+		
+return date.toLocaleTimeString('pt-BR', {
 			hour: '2-digit',
 			minute: '2-digit',
 		});
@@ -128,7 +131,7 @@ const Events = ({ data }: EventsProps) => {
 								className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
 								aria-label="Previous"
 							>
-								<ArrowLeft className="w-6 h-6 text-gray-800" />
+								<ArrowLeft className="size-6 text-gray-800" />
 							</button>
 							<button
 								onClick={handleNext}
@@ -136,7 +139,7 @@ const Events = ({ data }: EventsProps) => {
 								className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
 								aria-label="Next"
 							>
-								<ArrowRight className="w-6 h-6 text-gray-800" />
+								<ArrowRight className="size-6 text-gray-800" />
 							</button>
 						</>
 					)}
@@ -168,8 +171,8 @@ const Events = ({ data }: EventsProps) => {
 														className="object-cover group-hover:scale-105 transition-transform duration-300"
 													/>
 												) : (
-													<div className="w-full h-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
-														<Calendar className="w-20 h-20 text-white opacity-50" />
+													<div className="size-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+														<Calendar className="size-20 text-white opacity-50" />
 													</div>
 												)}
 												{event.featured && (
@@ -191,7 +194,7 @@ const Events = ({ data }: EventsProps) => {
 
 												<div className="space-y-2 text-sm text-gray-600">
 													<div className="flex items-start gap-2">
-														<Calendar className="w-4 h-4 mt-0.5 flex-shrink-0 text-purple-600" />
+														<Calendar className="size-4 mt-0.5 flex-shrink-0 text-purple-600" />
 														<span>
 															{formatDate(event.start_date)} às {formatTime(event.start_date)}
 														</span>
@@ -199,7 +202,7 @@ const Events = ({ data }: EventsProps) => {
 
 													{event.location_name && (
 														<div className="flex items-start gap-2">
-															<MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-purple-600" />
+															<MapPin className="size-4 mt-0.5 flex-shrink-0 text-purple-600" />
 															<span className="line-clamp-1">{event.location_name}</span>
 														</div>
 													)}
@@ -238,7 +241,7 @@ const Events = ({ data }: EventsProps) => {
 								<button
 									key={index}
 									onClick={() => setCurrentIndex(index)}
-									className={`w-2 h-2 rounded-full transition-all ${
+									className={`size-2 rounded-full transition-all ${
 										index === currentIndex ? 'bg-purple-600 w-8' : 'bg-gray-300'
 									}`}
 									aria-label={`Go to slide ${index + 1}`}

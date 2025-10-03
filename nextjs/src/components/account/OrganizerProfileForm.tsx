@@ -70,15 +70,10 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 	const loadOrganizer = async () => {
 		try {
 			setIsLoading(true);
-			const token = localStorage.getItem('directus_token');
-			if (!token) {
-				throw new Error('Usuário não autenticado');
-			}
 
+			// Use Next.js API route (cookies sent automatically)
 			const response = await fetch(`/api/organizer?userId=${userId}`, {
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
+				credentials: 'include',
 			});
 
 			if (!response.ok) {
@@ -122,11 +117,6 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 		setIsSubmitting(true);
 
 		try {
-			const token = localStorage.getItem('directus_token');
-			if (!token) {
-				throw new Error('Usuário não autenticado');
-			}
-
 			let logoId: string | undefined;
 
 			// Upload logo if a new file was selected
@@ -134,11 +124,10 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 				const formData = new FormData();
 				formData.append('file', logoFile);
 
+				// Use Next.js API route (cookies sent automatically)
 				const uploadResponse = await fetch('/api/user/profile', {
 					method: 'POST',
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
+					credentials: 'include',
 					body: formData,
 				});
 
@@ -166,8 +155,8 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 					method: 'PATCH',
 					headers: {
 						'Content-Type': 'application/json',
-						Authorization: `Bearer ${token}`,
 					},
+					credentials: 'include',
 					body: JSON.stringify({
 						id: organizer.id,
 						...organizerData,
@@ -189,8 +178,8 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
-						Authorization: `Bearer ${token}`,
 					},
+					credentials: 'include',
 					body: JSON.stringify({
 						...organizerData,
 						user_id: userId,
@@ -229,7 +218,7 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 	if (isLoading) {
 		return (
 			<div className="flex items-center justify-center py-12">
-				<Loader2 className="h-8 w-8 animate-spin text-primary" />
+				<Loader2 className="size-8 animate-spin text-primary" />
 			</div>
 		);
 	}
@@ -245,7 +234,7 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 		<>
 			{!organizer && (
 				<div className="mb-6 p-4 border border-blue-200 bg-blue-50 rounded-lg flex gap-3">
-					<Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+					<Info className="size-5 text-blue-600 mt-0.5 flex-shrink-0" />
 					<p className="text-sm text-blue-900">
 						Você ainda não possui um perfil de organizador. Preencha o formulário abaixo para criar
 						um.
@@ -259,15 +248,15 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 					<div className="space-y-2">
 						<FormLabel>Logo do Organizador</FormLabel>
 						<div className="flex items-center gap-4">
-							<div className="flex items-center justify-center w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 overflow-hidden">
+							<div className="flex items-center justify-center size-20 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 overflow-hidden">
 								{logoPreview || currentLogoUrl ? (
 									<img
 										src={logoPreview || currentLogoUrl || ''}
 										alt="Logo"
-										className="w-full h-full object-cover"
+										className="size-full object-cover"
 									/>
 								) : (
-									<Building2 className="h-8 w-8 text-gray-400" />
+									<Building2 className="size-8 text-gray-400" />
 								)}
 							</div>
 							<div>
@@ -284,7 +273,7 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 									size="sm"
 									onClick={() => document.getElementById('logo-upload')?.click()}
 								>
-									<Upload className="h-4 w-4 mr-2" />
+									<Upload className="size-4 mr-2" />
 									{logoPreview ? 'Alterar Logo' : 'Fazer Upload'}
 								</Button>
 								<FormDescription className="mt-2">
@@ -414,19 +403,19 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 						<Button type="submit" disabled={isSubmitting} className="gap-2">
 							{isSubmitting ? (
 								<>
-									<Loader2 className="h-4 w-4 animate-spin" />
+									<Loader2 className="size-4 animate-spin" />
 									Salvando...
 								</>
 							) : (
 								<>
 									{organizer ? (
 										<>
-											<Save className="h-4 w-4" />
+											<Save className="size-4" />
 											Salvar Alterações
 										</>
 									) : (
 										<>
-											<Plus className="h-4 w-4" />
+											<Plus className="size-4" />
 											Criar Perfil de Organizador
 										</>
 									)}

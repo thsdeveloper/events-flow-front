@@ -15,9 +15,14 @@ export async function POST(request: NextRequest) {
 		}
 
 		const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL as string;
-		const adminToken = process.env.DIRECTUS_ADMIN_TOKEN || process.env.DIRECTUS_PUBLIC_TOKEN;
 
-		if (!adminToken) {
+		// Note: Public registration requires either:
+		// 1. A public role with permission to create users, OR
+		// 2. Directus public registration endpoint (if enabled)
+		// For now, using public token which should have create user permission
+		const publicToken = process.env.DIRECTUS_PUBLIC_TOKEN;
+
+		if (!publicToken) {
 			return NextResponse.json(
 				{ error: 'Configuração do servidor inválida' },
 				{ status: 500 }
@@ -29,7 +34,7 @@ export async function POST(request: NextRequest) {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${adminToken}`,
+				'Authorization': `Bearer ${publicToken}`,
 			},
 			body: JSON.stringify({
 				email,
@@ -68,7 +73,8 @@ export async function POST(request: NextRequest) {
 		// Handle specific Directus errors
 		if (error.errors) {
 			const firstError = error.errors[0];
-			return NextResponse.json(
+			
+return NextResponse.json(
 				{ error: firstError.message || 'Erro ao criar usuário' },
 				{ status: 400 }
 			);

@@ -239,6 +239,23 @@ export interface EventCategory {
 	events?: Event[] | string[];
 }
 
+export interface EventConfigurations {
+	/** @primaryKey */
+	id: number;
+	/** @description Taxa de serviço padrão em percentual (ex: 10 para 10%) @required */
+	service_fee_percentage: number;
+	/** @description Descrição da taxa para exibir aos organizadores */
+	service_fee_description?: string | null;
+	/** @description Permitir que organizadores criem eventos gratuitos */
+	allow_free_events?: boolean | null;
+	/** @description Limite máximo de tipos de ingressos por evento (deixe vazio para ilimitado) */
+	max_tickets_per_event?: number | null;
+	/** @description Prefixo para códigos de ingresso (ex: EVT, TKT) */
+	ticket_code_prefix?: string | null;
+	/** @description Enviar email de confirmação automático após compra */
+	registration_confirmation_email?: boolean | null;
+}
+
 export interface EventRegistration {
 	/** @primaryKey */
 	id: string;
@@ -266,6 +283,16 @@ export interface EventRegistration {
 	check_in_date?: string | null;
 	/** @description Informações adicionais em JSON */
 	additional_info?: Record<string, any> | null;
+	/** @description Tipo de ingresso adquirido */
+	ticket_type_id?: EventTicket | string | null;
+	/** @description Quantidade de ingressos @required */
+	quantity: number;
+	/** @description Preço unitário no momento da compra */
+	unit_price?: number | null;
+	/** @description Taxa de serviço aplicada */
+	service_fee?: number | null;
+	/** @description Valor total pago */
+	total_amount?: number | null;
 }
 
 export interface Event {
@@ -317,6 +344,45 @@ export interface Event {
 	/** @description Destacar evento? */
 	featured?: boolean | null;
 	registrations?: EventRegistration[] | string[];
+	/** @description Tipos de ingressos disponíveis */
+	tickets?: EventTicket[] | string[];
+}
+
+export interface EventTicket {
+	/** @primaryKey */
+	id: string;
+	status?: 'active' | 'sold_out' | 'inactive';
+	sort?: number | null;
+	user_created?: DirectusUser | string | null;
+	date_created?: string | null;
+	user_updated?: DirectusUser | string | null;
+	date_updated?: string | null;
+	/** @description Evento relacionado @required */
+	event_id: Event | string;
+	/** @description Nome do tipo de ingresso (ex: Ingresso Único, Meia-Entrada, VIP) @required */
+	title: string;
+	/** @description Informações adicionais sobre o ingresso */
+	description?: string | null;
+	/** @description Quantidade total disponível para venda @required */
+	quantity: number;
+	/** @description Quantidade já vendida (calculado automaticamente) */
+	quantity_sold?: number | null;
+	/** @description Valor a receber pelo organizador (sem taxa de serviço) @required */
+	price: number;
+	/** @description Como a taxa de serviço será cobrada @required */
+	service_fee_type: 'absorbed' | 'passed_to_buyer';
+	/** @description Preço final para o comprador (calculado automaticamente) */
+	buyer_price?: number | null;
+	/** @description Data de início das vendas deste ingresso */
+	sale_start_date?: string | null;
+	/** @description Data de encerramento das vendas */
+	sale_end_date?: string | null;
+	/** @description Mínimo de ingressos por compra */
+	min_quantity_per_purchase?: number | null;
+	/** @description Máximo de ingressos por compra */
+	max_quantity_per_purchase?: number | null;
+	/** @description Visibilidade do ingresso */
+	visibility?: 'public' | 'invited_only' | 'manual' | null;
 }
 
 export interface FormField {
@@ -504,7 +570,7 @@ export interface PageBlock {
 	/** @description The id of the page that this block belongs to. */
 	page?: Page | string | null;
 	/** @description The data for the block. */
-	item?: BlockHero | BlockRichtext | BlockForm | BlockPost | BlockGallery | BlockPricing | string | null;
+	item?: BlockHero | BlockRichtext | BlockForm | BlockPost | BlockGallery | BlockPricing | BlockEvent | string | null;
 	/** @description The collection (type of block). */
 	collection?: string | null;
 	/** @description Temporarily hide this block on the website without having to remove it from your page. */
@@ -1045,8 +1111,10 @@ export interface Schema {
 	block_pricing_cards: BlockPricingCard[];
 	block_richtext: BlockRichtext[];
 	event_categories: EventCategory[];
+	event_configurations: EventConfigurations;
 	event_registrations: EventRegistration[];
 	events: Event[];
+	event_tickets: EventTicket[];
 	form_fields: FormField[];
 	forms: Form[];
 	form_submissions: FormSubmission[];
@@ -1102,8 +1170,10 @@ export enum CollectionNames {
 	block_pricing_cards = 'block_pricing_cards',
 	block_richtext = 'block_richtext',
 	event_categories = 'event_categories',
+	event_configurations = 'event_configurations',
 	event_registrations = 'event_registrations',
 	events = 'events',
+	event_tickets = 'event_tickets',
 	form_fields = 'form_fields',
 	forms = 'forms',
 	form_submissions = 'form_submissions',

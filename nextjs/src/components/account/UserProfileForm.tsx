@@ -70,11 +70,6 @@ export function UserProfileForm({ user }: UserProfileFormProps) {
 		setIsSubmitting(true);
 
 		try {
-			const token = localStorage.getItem('directus_token');
-			if (!token) {
-				throw new Error('Usuário não autenticado');
-			}
-
 			let avatarId: string | undefined;
 
 			// Upload avatar if a new file was selected
@@ -82,11 +77,10 @@ export function UserProfileForm({ user }: UserProfileFormProps) {
 				const formData = new FormData();
 				formData.append('file', avatarFile);
 
+				// Use Next.js API route (cookies sent automatically)
 				const uploadResponse = await fetch('/api/user/profile', {
 					method: 'POST',
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
+					credentials: 'include',
 					body: formData,
 				});
 
@@ -103,8 +97,8 @@ export function UserProfileForm({ user }: UserProfileFormProps) {
 				method: 'PATCH',
 				headers: {
 					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`,
 				},
+				credentials: 'include',
 				body: JSON.stringify({
 					first_name: values.first_name || null,
 					last_name: values.last_name || null,
@@ -157,12 +151,12 @@ export function UserProfileForm({ user }: UserProfileFormProps) {
 				<div className="space-y-2">
 					<FormLabel>Foto de Perfil</FormLabel>
 					<div className="flex items-center gap-4">
-						<div className="flex items-center justify-center w-20 h-20 rounded-full bg-blue-500 text-white font-semibold text-2xl overflow-hidden">
+						<div className="flex items-center justify-center size-20 rounded-full bg-blue-500 text-white font-semibold text-2xl overflow-hidden">
 							{avatarPreview || currentAvatarUrl ? (
 								<img
 									src={avatarPreview || currentAvatarUrl || ''}
 									alt="Avatar"
-									className="w-full h-full object-cover"
+									className="size-full object-cover"
 								/>
 							) : (
 								`${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase() || 'U'
@@ -182,7 +176,7 @@ export function UserProfileForm({ user }: UserProfileFormProps) {
 								size="sm"
 								onClick={() => document.getElementById('avatar-upload')?.click()}
 							>
-								<Upload className="h-4 w-4 mr-2" />
+								<Upload className="size-4 mr-2" />
 								{avatarPreview ? 'Alterar Foto' : 'Fazer Upload'}
 							</Button>
 							<FormDescription className="mt-2">
@@ -299,12 +293,12 @@ export function UserProfileForm({ user }: UserProfileFormProps) {
 					<Button type="submit" disabled={isSubmitting} className="gap-2">
 						{isSubmitting ? (
 							<>
-								<Loader2 className="h-4 w-4 animate-spin" />
+								<Loader2 className="size-4 animate-spin" />
 								Salvando...
 							</>
 						) : (
 							<>
-								<Save className="h-4 w-4" />
+								<Save className="size-4" />
 								Salvar Alterações
 							</>
 						)}

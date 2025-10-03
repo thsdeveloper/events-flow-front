@@ -15,6 +15,7 @@ interface AuthContextType {
 	login: (email: string, password: string) => Promise<void>;
 	logout: () => Promise<void>;
 	register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
+	refreshAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,65 +28,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		checkAuth();
 	}, []);
 
-	const refreshToken = async (): Promise<boolean> => {
+	const checkAuth = async () => {
 		try {
-			const refresh_token = localStorage.getItem('directus_refresh_token');
-			if (!refresh_token) return false;
-
-			const response = await fetch('/api/auth/refresh', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ refresh_token }),
+			// Cookies are sent automatically with fetch
+			// No need to pass tokens manually!
+			const response = await fetch('/api/auth/me', {
+				credentials: 'include', // Important: include cookies
 			});
 
 			if (response.ok) {
 				const data = await response.json();
-				localStorage.setItem('directus_token', data.access_token);
-				if (data.refresh_token) {
-					localStorage.setItem('directus_refresh_token', data.refresh_token);
-				}
 				setUser(data.user);
-				return true;
-			}
-			return false;
-		} catch (error) {
-			console.error('Token refresh failed:', error);
-			return false;
-		}
-	};
-
-	const checkAuth = async () => {
-		try {
-			const token = localStorage.getItem('directus_token');
-			if (token) {
-				const response = await fetch('/api/auth/me', {
-					headers: {
-						'Authorization': `Bearer ${token}`,
-					},
+			} else if (response.status === 401) {
+				// Token expired, try to refresh
+				const refreshResponse = await fetch('/api/auth/refresh', {
+					method: 'POST',
+					credentials: 'include',
 				});
 
-				if (response.ok) {
-					const data = await response.json();
-					setUser(data.user);
-				} else if (response.status === 401) {
-					// Token expired, try to refresh
-					const refreshed = await refreshToken();
-					if (!refreshed) {
-						// Refresh failed, clear tokens
-						localStorage.removeItem('directus_token');
-						localStorage.removeItem('directus_refresh_token');
-					}
+				if (refreshResponse.ok) {
+					// Refresh succeeded, check auth again
+					await checkAuth();
 				} else {
-					localStorage.removeItem('directus_token');
-					localStorage.removeItem('directus_refresh_token');
+					// Refresh failed, user needs to login
+					setUser(null);
 				}
+			} else {
+				setUser(null);
 			}
 		} catch (error) {
 			console.error('Auth check failed:', error);
-			localStorage.removeItem('directus_token');
-			localStorage.removeItem('directus_refresh_token');
+			setUser(null);
 		} finally {
 			setIsLoading(false);
 		}
@@ -98,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				headers: {
 					'Content-Type': 'application/json',
 				},
+				credentials: 'include', // Include cookies
 				body: JSON.stringify({ email, password }),
 			});
 
@@ -107,13 +81,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				throw new Error(data.error || 'Falha ao fazer login');
 			}
 
-			if (data.access_token) {
-				localStorage.setItem('directus_token', data.access_token);
-				if (data.refresh_token) {
-					localStorage.setItem('directus_refresh_token', data.refresh_token);
-				}
-				setUser(data.user);
-			}
+			// Tokens are now stored in httpOnly cookies by the API
+			// No need to manually store them!
+			setUser(data.user);
 		} catch (error: any) {
 			console.error('Login failed:', error);
 			throw new Error(error.message || 'Falha ao fazer login. Verifique suas credenciais.');
@@ -122,10 +92,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	const handleLogout = async () => {
 		try {
-			await fetch('/api/auth/logout', { method: 'POST' });
-			localStorage.removeItem('directus_token');
-			localStorage.removeItem('directus_refresh_token');
+			await fetch('/api/auth/logout', {
+				method: 'POST',
+				credentials: 'include',
+			});
 			setUser(null);
+			window.location.href = '/login';
 		} catch (error) {
 			console.error('Logout failed:', error);
 		}
@@ -168,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				login: handleLogin,
 				logout: handleLogout,
 				register: handleRegister,
+				refreshAuth: checkAuth,
 			}}
 		>
 			{children}
@@ -180,5 +153,6 @@ export function useAuth() {
 	if (context === undefined) {
 		throw new Error('useAuth must be used within an AuthProvider');
 	}
+
 	return context;
 }

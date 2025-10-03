@@ -5,14 +5,15 @@ import DirectusImage from '@/components/shared/DirectusImage';
 import { Calendar, MapPin, Clock, Users, DollarSign, Globe, Share2 } from 'lucide-react';
 
 interface EventPageProps {
-	params: {
+	params: Promise<{
 		slug: string;
-	};
+	}>;
 }
 
 export async function generateMetadata({ params }: EventPageProps): Promise<Metadata> {
+	const { slug } = await params;
 	try {
-		const event = await fetchEventBySlug(params.slug);
+		const event = await fetchEventBySlug(slug);
 
 		return {
 			title: event.title,
@@ -26,17 +27,19 @@ export async function generateMetadata({ params }: EventPageProps): Promise<Meta
 }
 
 export default async function EventPage({ params }: EventPageProps) {
+	const { slug } = await params;
 	let event;
 
 	try {
-		event = await fetchEventBySlug(params.slug);
+		event = await fetchEventBySlug(slug);
 	} catch (error) {
 		notFound();
 	}
 
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString);
-		return date.toLocaleDateString('pt-BR', {
+		
+return date.toLocaleDateString('pt-BR', {
 			day: '2-digit',
 			month: 'long',
 			year: 'numeric',
@@ -45,7 +48,8 @@ export default async function EventPage({ params }: EventPageProps) {
 
 	const formatTime = (dateString: string) => {
 		const date = new Date(dateString);
-		return date.toLocaleTimeString('pt-BR', {
+		
+return date.toLocaleTimeString('pt-BR', {
 			hour: '2-digit',
 			minute: '2-digit',
 		});
@@ -85,14 +89,14 @@ export default async function EventPage({ params }: EventPageProps) {
 			<div className="relative h-[400px] bg-gradient-to-br from-purple-900 to-indigo-800">
 				{event.cover_image ? (
 					<DirectusImage
-						uuid={event.cover_image}
+						uuid={typeof event.cover_image === 'string' ? event.cover_image : event.cover_image.id}
 						alt={event.title}
 						fill
 						className="object-cover opacity-60"
 					/>
 				) : (
 					<div className="absolute inset-0 flex items-center justify-center">
-						<Calendar className="w-32 h-32 text-white opacity-30" />
+						<Calendar className="size-32 text-white opacity-30" />
 					</div>
 				)}
 
@@ -100,16 +104,16 @@ export default async function EventPage({ params }: EventPageProps) {
 				<div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
 				{/* Event Title */}
-				<div className="absolute bottom-0 left-0 right-0 p-8">
+				<div className="absolute bottom-0 inset-x-0 p-8">
 					<div className="max-w-7xl mx-auto">
 						<h1 className="text-4xl md:text-5xl font-bold text-white mb-4">{event.title}</h1>
 						<div className="flex flex-wrap gap-4 text-white/90">
 							<div className="flex items-center gap-2">
-								<Calendar className="w-5 h-5" />
+								<Calendar className="size-5" />
 								<span className="font-medium">{formatDateRange()}</span>
 							</div>
 							<div className="flex items-center gap-2">
-								<Clock className="w-5 h-5" />
+								<Clock className="size-5" />
 								<span className="font-medium capitalize">{formatTimeRange()}</span>
 							</div>
 						</div>
@@ -140,7 +144,7 @@ export default async function EventPage({ params }: EventPageProps) {
 						{(event.location_name || event.location_address) && (
 							<div className="bg-white rounded-2xl shadow-sm p-8">
 								<h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-									<MapPin className="w-6 h-6 text-purple-600" />
+									<MapPin className="size-6 text-purple-600" />
 									Local
 								</h2>
 								{event.location_name && (
@@ -154,7 +158,7 @@ export default async function EventPage({ params }: EventPageProps) {
 						{event.online_url && (
 							<div className="bg-white rounded-2xl shadow-sm p-8">
 								<h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-									<Globe className="w-6 h-6 text-purple-600" />
+									<Globe className="size-6 text-purple-600" />
 									Link Online
 								</h2>
 								<a
@@ -202,7 +206,7 @@ export default async function EventPage({ params }: EventPageProps) {
 							{/* Event Info */}
 							<div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
 								<div className="flex items-start gap-3">
-									<Calendar className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
+									<Calendar className="size-5 text-purple-600 mt-0.5 flex-shrink-0" />
 									<div>
 										<p className="font-semibold text-gray-900 mb-1">Data e Hora</p>
 										<p className="text-sm text-gray-600">
@@ -218,7 +222,7 @@ export default async function EventPage({ params }: EventPageProps) {
 
 								{event.max_attendees && (
 									<div className="flex items-start gap-3">
-										<Users className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
+										<Users className="size-5 text-purple-600 mt-0.5 flex-shrink-0" />
 										<div>
 											<p className="font-semibold text-gray-900 mb-1">Capacidade</p>
 											<p className="text-sm text-gray-600">
@@ -229,7 +233,7 @@ export default async function EventPage({ params }: EventPageProps) {
 								)}
 
 								<div className="flex items-start gap-3">
-									<Globe className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
+									<Globe className="size-5 text-purple-600 mt-0.5 flex-shrink-0" />
 									<div>
 										<p className="font-semibold text-gray-900 mb-1">Tipo</p>
 										<p className="text-sm text-gray-600 capitalize">
@@ -245,7 +249,7 @@ export default async function EventPage({ params }: EventPageProps) {
 
 							{/* Share Button */}
 							<button className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center gap-2">
-								<Share2 className="w-5 h-5" />
+								<Share2 className="size-5" />
 								Compartilhar
 							</button>
 						</div>

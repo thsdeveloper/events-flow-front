@@ -3,7 +3,6 @@ import '@/styles/fonts.css';
 import { ReactNode } from 'react';
 import { Metadata } from 'next';
 
-import VisualEditingLayout from '@/components/layout/VisualEditingLayout';
 import { ThemeProvider } from '@/components/ui/ThemeProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { fetchSiteData } from '@/lib/directus/fetchers';
@@ -29,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-	const { globals, headerNavigation, footerNavigation } = await fetchSiteData();
+	const { globals } = await fetchSiteData();
 	const accentColor = globals?.accent_color || '#6644ff';
 
 	return (
@@ -37,13 +36,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 			<body className="antialiased font-sans flex flex-col min-h-screen">
 				<ThemeProvider>
 					<AuthProvider>
-						<VisualEditingLayout
-							headerNavigation={headerNavigation}
-							footerNavigation={footerNavigation}
-							globals={globals}
-						>
-							<main className="flex-grow">{children}</main>
-						</VisualEditingLayout>
+						{children}
 					</AuthProvider>
 				</ThemeProvider>
 			</body>

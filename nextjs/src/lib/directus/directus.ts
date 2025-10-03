@@ -7,7 +7,7 @@ import {
 	readUser,
 	createItem,
 	uploadFiles,
-	withToken,
+	staticToken,
 } from '@directus/sdk';
 import type { RestClient } from '@directus/sdk';
 import Queue from 'p-queue';
@@ -46,7 +46,6 @@ export const useDirectus = () => ({
 	readUser,
 	createItem,
 	uploadFiles,
-	withToken,
 });
 
 export function getAuthenticatedClient(token: string) {
@@ -56,7 +55,7 @@ export function getAuthenticatedClient(token: string) {
 		},
 	})
 		.with(rest())
-		.with(withToken(token));
+		.with(staticToken(token));
 }
 
 export { directus };

@@ -21,7 +21,7 @@ export function UserMenuDropdown() {
 
 	if (isLoading) {
 		return (
-			<div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-300 animate-pulse" />
+			<div className="flex items-center justify-center size-10 rounded-full bg-gray-300 animate-pulse" />
 		);
 	}
 
@@ -34,7 +34,7 @@ export function UserMenuDropdown() {
 					onClick={() => setIsAuthModalOpen(true)}
 					className="font-semibold gap-2 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105"
 				>
-					<LogIn className="h-4 w-4" />
+					<LogIn className="size-4" />
 					Entrar
 				</Button>
 				<AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
@@ -48,13 +48,13 @@ export function UserMenuDropdown() {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<button className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-500 text-white font-semibold hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-colors">
+				<button className="flex items-center justify-center size-10 rounded-full bg-blue-500 text-white font-semibold hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-colors">
 					{userInitials}
 				</button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-56">
 				<div className="flex items-center gap-3 px-2 py-3">
-					<div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-500 text-white font-semibold">
+					<div className="flex items-center justify-center size-10 rounded-full bg-blue-500 text-white font-semibold">
 						{userInitials}
 					</div>
 					<div className="flex flex-col">
@@ -65,30 +65,30 @@ export function UserMenuDropdown() {
 				<DropdownMenuSeparator />
 				<DropdownMenuItem asChild>
 					<Link href="/account">
-						<User className="mr-2 h-4 w-4" />
+						<User className="mr-2 size-4" />
 						<span>Minha conta</span>
 					</Link>
 				</DropdownMenuItem>
 				<DropdownMenuItem>
-					<Heart className="mr-2 h-4 w-4" />
+					<Heart className="mr-2 size-4" />
 					<span>Favoritos</span>
 				</DropdownMenuItem>
 				<DropdownMenuItem>
-					<Calendar className="mr-2 h-4 w-4" />
+					<Calendar className="mr-2 size-4" />
 					<span>Criar evento</span>
 				</DropdownMenuItem>
 				<DropdownMenuItem>
-					<CalendarCheck className="mr-2 h-4 w-4" />
+					<CalendarCheck className="mr-2 size-4" />
 					<span>Meus eventos</span>
 				</DropdownMenuItem>
 				<DropdownMenuSeparator />
 				<DropdownMenuItem>
-					<HelpCircle className="mr-2 h-4 w-4" />
+					<HelpCircle className="mr-2 size-4" />
 					<span>Central de Ajuda</span>
 				</DropdownMenuItem>
 				<DropdownMenuSeparator />
 				<DropdownMenuItem onClick={logout}>
-					<LogOut className="mr-2 h-4 w-4" />
+					<LogOut className="mr-2 size-4" />
 					<span>Sair</span>
 				</DropdownMenuItem>
 			</DropdownMenuContent>

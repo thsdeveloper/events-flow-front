@@ -4,7 +4,8 @@ import type { Schema } from '@/types/directus-schema';
 
 export async function POST(request: NextRequest) {
 	try {
-		const { refresh_token } = await request.json();
+		// Read refresh token from httpOnly cookie
+		const refresh_token = request.cookies.get('directus_refresh_token')?.value;
 
 		if (!refresh_token) {
 			return NextResponse.json(
@@ -14,57 +15,73 @@ export async function POST(request: NextRequest) {
 		}
 
 		const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL as string;
-		const client = createDirectus<Schema>(directusUrl)
-			.with(rest())
-			.with(authentication('json'));
 
-		// Refresh the access token
-		const refreshResult = await client.refresh('json', refresh_token);
+		// Call Directus refresh endpoint directly
+		const response = await fetch(`${directusUrl}/auth/refresh`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				refresh_token,
+				mode: 'json',
+			}),
+		});
 
-		if (!refreshResult.access_token) {
+		if (!response.ok) {
 			return NextResponse.json(
 				{ error: 'Falha ao renovar token' },
 				{ status: 401 }
 			);
 		}
 
-		// Get user data with the new token
-		const basicUser = await client.request(
-			withToken(refreshResult.access_token,
-				async (client) => client.request({ method: 'GET', path: '/users/me' })
-			)
-		);
+		const data = await response.json();
 
-		// Use admin token to get full user data
-		const adminToken = process.env.DIRECTUS_ADMIN_TOKEN || process.env.DIRECTUS_PUBLIC_TOKEN;
-		const adminClient = createDirectus<Schema>(directusUrl).with(rest());
+		if (!data.data?.access_token) {
+			return NextResponse.json(
+				{ error: 'Falha ao renovar token' },
+				{ status: 401 }
+			);
+		}
 
-		const userData = await adminClient.request(
-			withToken(
-				adminToken as string,
-				readUser(basicUser.id, {
-					fields: ['id', 'email', 'first_name', 'last_name'],
-				})
-			)
-		);
-
-		return NextResponse.json({
-			success: true,
-			access_token: refreshResult.access_token,
-			refresh_token: refreshResult.refresh_token,
-			expires: refreshResult.expires,
-			user: {
-				id: userData.id,
-				email: userData.email,
-				first_name: userData.first_name,
-				last_name: userData.last_name,
-			}
+		// Get user data
+		const meResponse = await fetch(`${directusUrl}/users/me?fields=id,email,first_name,last_name`, {
+			headers: {
+				'Authorization': `Bearer ${data.data.access_token}`,
+			},
 		});
+
+		const meData = await meResponse.json();
+
+		const nextResponse = NextResponse.json({
+			success: true,
+			user: meData.data,
+		});
+
+		// Update cookies with new tokens
+		nextResponse.cookies.set('directus_token', data.data.access_token, {
+			httpOnly: true,
+			secure: process.env.NODE_ENV === 'production',
+			sameSite: 'lax',
+			maxAge: data.data.expires ? data.data.expires / 1000 : 86400,
+		});
+
+		if (data.data.refresh_token) {
+			nextResponse.cookies.set('directus_refresh_token', data.data.refresh_token, {
+				httpOnly: true,
+				secure: process.env.NODE_ENV === 'production',
+				sameSite: 'lax',
+				maxAge: 604800, // 7 days
+			});
+		}
+
+		return nextResponse;
 	} catch (error: any) {
 		console.error('Refresh token error:', error);
 
 		if (error.errors) {
 			const firstError = error.errors[0];
+
 			return NextResponse.json(
 				{ error: firstError.message || 'Token expirado' },
 				{ status: 401 }

@@ -4,7 +4,9 @@ const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL as string;
 
 export async function GET(request: NextRequest) {
 	try {
-		const token = request.headers.get('authorization')?.replace('Bearer ', '');
+		// Read token from cookie first, then fall back to Authorization header
+		const token = request.cookies.get('directus_token')?.value ||
+		              request.headers.get('authorization')?.replace('Bearer ', '');
 
 		if (!token) {
 			return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
@@ -27,14 +29,12 @@ export async function GET(request: NextRequest) {
 			return NextResponse.json({ error: 'userId é obrigatório' }, { status: 400 });
 		}
 
-		// Use admin token to get organizer
-		const adminToken = process.env.DIRECTUS_ADMIN_TOKEN || process.env.DIRECTUS_PUBLIC_TOKEN;
-
+		// Use user token to get organizer
 		const response = await fetch(
 			`${directusUrl}/items/organizers?filter[user_id][_eq]=${userId}&fields=*,logo.*&limit=1`,
 			{
 				headers: {
-					Authorization: `Bearer ${adminToken}`,
+					Authorization: `Bearer ${token}`,
 				},
 			}
 		);
@@ -53,7 +53,8 @@ export async function GET(request: NextRequest) {
 		return NextResponse.json({ organizer: null });
 	} catch (error: any) {
 		console.error('Error loading organizer:', error);
-		return NextResponse.json(
+		
+return NextResponse.json(
 			{ error: error.message || 'Erro ao carregar organizador' },
 			{ status: 500 }
 		);
@@ -62,7 +63,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
 	try {
-		const token = request.headers.get('authorization')?.replace('Bearer ', '');
+		// Read token from cookie first, then fall back to Authorization header
+		const token = request.cookies.get('directus_token')?.value ||
+		              request.headers.get('authorization')?.replace('Bearer ', '');
 
 		if (!token) {
 			return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
@@ -81,14 +84,12 @@ export async function POST(request: NextRequest) {
 
 		const body = await request.json();
 
-		// Use admin token to create organizer
-		const adminToken = process.env.DIRECTUS_ADMIN_TOKEN || process.env.DIRECTUS_PUBLIC_TOKEN;
-
+		// Use user token to create organizer (respects permissions and proper audit trail)
 		const response = await fetch(`${directusUrl}/items/organizers`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
-				Authorization: `Bearer ${adminToken}`,
+				Authorization: `Bearer ${token}`,
 			},
 			body: JSON.stringify({
 				email: body.email,
@@ -112,7 +113,8 @@ export async function POST(request: NextRequest) {
 		return NextResponse.json({ organizer: data.data });
 	} catch (error: any) {
 		console.error('Error creating organizer:', error);
-		return NextResponse.json(
+		
+return NextResponse.json(
 			{ error: error.message || 'Erro ao criar organizador' },
 			{ status: 500 }
 		);
@@ -121,7 +123,9 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
 	try {
-		const token = request.headers.get('authorization')?.replace('Bearer ', '');
+		// Read token from cookie first, then fall back to Authorization header
+		const token = request.cookies.get('directus_token')?.value ||
+		              request.headers.get('authorization')?.replace('Bearer ', '');
 
 		if (!token) {
 			return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
@@ -144,14 +148,12 @@ export async function PATCH(request: NextRequest) {
 			return NextResponse.json({ error: 'ID do organizador é obrigatório' }, { status: 400 });
 		}
 
-		// Use admin token to update organizer
-		const adminToken = process.env.DIRECTUS_ADMIN_TOKEN || process.env.DIRECTUS_PUBLIC_TOKEN;
-
+		// Use user token to update organizer (respects permissions and proper audit trail)
 		const response = await fetch(`${directusUrl}/items/organizers/${body.id}`, {
 			method: 'PATCH',
 			headers: {
 				'Content-Type': 'application/json',
-				Authorization: `Bearer ${adminToken}`,
+				Authorization: `Bearer ${token}`,
 			},
 			body: JSON.stringify({
 				email: body.email,
@@ -174,7 +176,8 @@ export async function PATCH(request: NextRequest) {
 		return NextResponse.json({ organizer: data.data });
 	} catch (error: any) {
 		console.error('Error updating organizer:', error);
-		return NextResponse.json(
+		
+return NextResponse.json(
 			{ error: error.message || 'Erro ao atualizar organizador' },
 			{ status: 500 }
 		);

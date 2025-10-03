@@ -36,7 +36,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 				if (!firstName || !lastName) {
 					setError('Por favor, preencha todos os campos');
 					setIsSubmitting(false);
-					return;
+					
+return;
 				}
 				await register(email, password, firstName, lastName);
 			}
