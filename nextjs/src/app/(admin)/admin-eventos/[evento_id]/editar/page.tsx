@@ -120,7 +120,8 @@ export default function EditarEventoPage({ params }: PageProps) {
 						variant: 'destructive',
 					});
 					setIsLoading(false);
-					return;
+					
+return;
 				}
 			}
 
@@ -138,7 +139,8 @@ export default function EditarEventoPage({ params }: PageProps) {
 						variant: 'destructive',
 					});
 					setIsLoading(false);
-					return;
+					
+return;
 				}
 			}
 
@@ -165,7 +167,8 @@ export default function EditarEventoPage({ params }: PageProps) {
 					variant: 'destructive',
 				});
 				setIsLoading(false);
-				return;
+				
+return;
 			}
 
 			// Create event data

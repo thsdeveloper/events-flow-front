@@ -28,7 +28,9 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Organizer } from '@/types/directus-schema';
-import { Loader2, Save, Upload, Plus, Building2, Info } from 'lucide-react';
+import { Loader2, Save, Upload, Plus, Building2, Info, CreditCard } from 'lucide-react';
+import { StripeStatusCard } from '@/components/organizer/StripeStatusCard';
+import { StripeOnboardingButton } from '@/components/organizer/StripeOnboardingButton';
 
 const organizerProfileSchema = z.object({
 	email: z.string().email('Email inválido'),
@@ -79,7 +81,14 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 			const organizers = await client.request(
 				readItems('organizers', {
 					filter: { user_id: { _eq: userId } },
-					fields: ['*', { logo: ['*'] }],
+					fields: [
+						'*',
+						{ logo: ['*'] },
+						'stripe_account_id',
+						'stripe_onboarding_complete',
+						'stripe_charges_enabled',
+						'stripe_payouts_enabled',
+					],
 					limit: 1,
 				})
 			);
@@ -395,6 +404,35 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 					</div>
 				</form>
 			</Form>
+
+			{/* Stripe Payment Section */}
+			{organizer && (
+				<div className="mt-8 pt-8 border-t">
+					<div className="mb-6">
+						<h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2 mb-2">
+							<CreditCard className="size-5 text-primary" />
+							Configuração de Pagamentos
+						</h3>
+						<p className="text-sm text-gray-600">
+							Configure sua conta Stripe para receber pagamentos por eventos pagos
+						</p>
+					</div>
+
+					<div className="space-y-6">
+						<StripeStatusCard
+							stripeAccountId={organizer.stripe_account_id}
+							onboardingComplete={organizer.stripe_onboarding_complete || false}
+							chargesEnabled={organizer.stripe_charges_enabled || false}
+							payoutsEnabled={organizer.stripe_payouts_enabled || false}
+						/>
+
+						<StripeOnboardingButton
+							organizerId={organizer.id}
+							isComplete={organizer.stripe_onboarding_complete || false}
+						/>
+					</div>
+				</div>
+			)}
 		</>
 	);
 }

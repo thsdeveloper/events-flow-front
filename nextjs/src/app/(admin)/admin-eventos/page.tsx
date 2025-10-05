@@ -25,7 +25,36 @@ return;
 			try {
 				const data = await client.request(
 					readItems('events', {
-						fields: ['*', { category_id: ['*'] }, { cover_image: ['*'] }, { organizer_id: ['*'] }, { registrations: ['*'] }],
+						fields: [
+							'id',
+							'title',
+							'slug',
+							'description',
+							'short_description',
+							'cover_image',
+							'start_date',
+							'end_date',
+							'location_name',
+							'location_address',
+							'online_url',
+							'event_type',
+							'max_attendees',
+							'registration_start',
+							'registration_end',
+							'is_free',
+							'featured',
+							'tags',
+							'status',
+							'sort',
+							'user_created',
+							'date_created',
+							'user_updated',
+							'date_updated',
+							{ category_id: ['*'] },
+							{ cover_image: ['*'] },
+							{ organizer_id: ['*'] },
+							{ registrations: ['*'] }
+						],
 						sort: ['-date_created'],
 					})
 				);

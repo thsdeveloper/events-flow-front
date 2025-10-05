@@ -81,7 +81,8 @@ return;
 				description: 'Este evento está marcado como gratuito. Não é possível cadastrar ingressos em eventos gratuitos.',
 				variant: 'destructive',
 			});
-			return;
+			
+return;
 		}
 		setTicketType(type);
 		setEditingTicket(null);
@@ -155,7 +156,8 @@ return;
 				description: `Este evento possui ${totalSold > 0 ? `${totalSold} ingresso(s) vendido(s)` : ''}${totalSold > 0 && participantsCount > 0 ? ' e ' : ''}${participantsCount > 0 ? `${participantsCount} participante(s) registrado(s)` : ''}. Você pode arquivá-lo ao invés de excluir.`,
 				variant: 'destructive',
 			});
-			return;
+			
+return;
 		}
 
 		const confirmed = window.confirm(
@@ -417,9 +419,9 @@ return (
 						<div className="flex items-start gap-3">
 							<DollarSign className="size-5 text-gray-400 mt-0.5 flex-shrink-0" />
 							<div>
-								<p className="text-sm text-gray-600 dark:text-gray-400">Valor</p>
+								<p className="text-sm text-gray-600 dark:text-gray-400">Tipo</p>
 								<p className="font-medium text-gray-900 dark:text-white">
-									{event.is_free ? 'Gratuito' : `R$ ${Number(event.price || 0).toFixed(2)}`}
+									{event.is_free ? 'Gratuito' : 'Pago'}
 								</p>
 							</div>
 						</div>

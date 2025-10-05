@@ -19,7 +19,7 @@ const menuItems = [
 	},
 	{
 		name: 'Perfil',
-		href: '/account',
+		href: '/perfil',
 		icon: Users,
 	},
 ];

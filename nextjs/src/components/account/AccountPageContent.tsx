@@ -5,21 +5,33 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, Building2, Loader2, Mail, Camera, Shield, BarChart3 } from 'lucide-react';
+import { User, Building2, Loader2, Mail, Camera, Shield, BarChart3, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { UserProfileForm } from './UserProfileForm';
 import { OrganizerProfileForm } from './OrganizerProfileForm';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export function AccountPageContent() {
 	const { user, isLoading } = useAuth();
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const [activeTab, setActiveTab] = useState('profile');
+
+	const setupStatus = searchParams.get('setup');
+	const isSetupSuccess = setupStatus === 'success';
+	const isSetupRefresh = setupStatus === 'refresh';
 
 	useEffect(() => {
 		if (!isLoading && !user) {
 			router.push('/');
 		}
 	}, [user, isLoading, router]);
+
+	// Auto-switch to organizer tab when returning from Stripe
+	useEffect(() => {
+		if (setupStatus && activeTab !== 'organizer') {
+			setActiveTab('organizer');
+		}
+	}, [setupStatus]);
 
 	if (isLoading) {
 		return (
@@ -39,6 +51,41 @@ export function AccountPageContent() {
 	return (
 		<div className="min-h-screen bg-gray-50 dark:bg-gray-900">
 			<div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+				{/* Stripe Setup Messages */}
+				{isSetupSuccess && (
+					<div className="bg-green-50 border-l-4 border-green-500 rounded-lg p-6 mb-6 shadow-sm">
+						<div className="flex gap-4">
+							<CheckCircle2 className="size-6 text-green-600 flex-shrink-0 mt-0.5" />
+							<div className="flex-1">
+								<h3 className="text-lg font-semibold text-green-900 mb-1">
+									Cadastro Stripe Concluído!
+								</h3>
+								<p className="text-green-700">
+									Sua conta foi configurada com sucesso. Os dados serão atualizados em alguns
+									instantes e você já pode criar eventos pagos.
+								</p>
+							</div>
+						</div>
+					</div>
+				)}
+
+				{isSetupRefresh && (
+					<div className="bg-amber-50 border-l-4 border-amber-500 rounded-lg p-6 mb-6 shadow-sm">
+						<div className="flex gap-4">
+							<AlertTriangle className="size-6 text-amber-600 flex-shrink-0 mt-0.5" />
+							<div className="flex-1">
+								<h3 className="text-lg font-semibold text-amber-900 mb-1">
+									Cadastro Não Concluído
+								</h3>
+								<p className="text-amber-700">
+									Você saiu antes de completar o cadastro no Stripe. Clique novamente no botão
+									"Configurar Pagamentos" para continuar de onde parou.
+								</p>
+							</div>
+						</div>
+					</div>
+				)}
+
 				{/* Header Section */}
 				<div className="bg-gradient-to-r from-primary to-primary/80 rounded-2xl p-8 mb-8 text-white shadow-lg">
 					<div className="flex flex-col md:flex-row md:items-center gap-6">
@@ -122,46 +169,56 @@ export function AccountPageContent() {
 
 				{/* Tabs Section */}
 				<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-					<TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8 h-12">
-						<TabsTrigger value="profile" className="gap-2 text-base">
-							<User className="size-4" />
+					<TabsList className="grid w-full max-w-xl mx-auto grid-cols-2 mb-8 h-14 bg-white dark:bg-gray-800 shadow-md border">
+						<TabsTrigger
+							value="profile"
+							className="gap-2 text-base data-[state=active]:bg-primary data-[state=active]:text-white transition-all"
+						>
+							<User className="size-5" />
 							Perfil Pessoal
 						</TabsTrigger>
-						<TabsTrigger value="organizer" className="gap-2 text-base">
-							<Building2 className="size-4" />
+						<TabsTrigger
+							value="organizer"
+							className="gap-2 text-base data-[state=active]:bg-primary data-[state=active]:text-white transition-all"
+						>
+							<Building2 className="size-5" />
 							Organizador
 						</TabsTrigger>
 					</TabsList>
 
-					<TabsContent value="profile" className="space-y-6">
-						<Card className="border-t-4 border-t-primary shadow-lg">
-							<CardHeader className="bg-gray-50 dark:bg-gray-800">
-								<CardTitle className="flex items-center gap-2">
-									<User className="size-5" />
+					<TabsContent value="profile" className="space-y-6 animate-in fade-in-50 duration-300">
+						<Card className="border-t-4 border-t-primary shadow-xl hover:shadow-2xl transition-shadow">
+							<CardHeader className="bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
+								<CardTitle className="flex items-center gap-3 text-2xl">
+									<div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
+										<User className="size-5 text-primary" />
+									</div>
 									Informações Pessoais
 								</CardTitle>
-								<CardDescription>
+								<CardDescription className="text-base">
 									Atualize suas informações de perfil e dados de contato
 								</CardDescription>
 							</CardHeader>
-							<CardContent className="pt-6">
+							<CardContent className="pt-8">
 								<UserProfileForm user={user} />
 							</CardContent>
 						</Card>
 					</TabsContent>
 
-					<TabsContent value="organizer" className="space-y-6">
-						<Card className="border-t-4 border-t-primary shadow-lg">
-							<CardHeader className="bg-gray-50 dark:bg-gray-800">
-								<CardTitle className="flex items-center gap-2">
-									<Building2 className="size-5" />
+					<TabsContent value="organizer" className="space-y-6 animate-in fade-in-50 duration-300">
+						<Card className="border-t-4 border-t-primary shadow-xl hover:shadow-2xl transition-shadow">
+							<CardHeader className="bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
+								<CardTitle className="flex items-center gap-3 text-2xl">
+									<div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
+										<Building2 className="size-5 text-primary" />
+									</div>
 									Perfil de Organizador
 								</CardTitle>
-								<CardDescription>
+								<CardDescription className="text-base">
 									Gerencie as informações do seu perfil como organizador de eventos
 								</CardDescription>
 							</CardHeader>
-							<CardContent className="pt-6">
+							<CardContent className="pt-8">
 								<OrganizerProfileForm userId={user.id} />
 							</CardContent>
 						</Card>

@@ -20,7 +20,6 @@ interface Event {
 	location_address?: string;
 	event_type: 'in_person' | 'online' | 'hybrid';
 	is_free: boolean;
-	price?: number;
 	featured: boolean;
 }
 
@@ -208,15 +207,11 @@ return date.toLocaleTimeString('pt-BR', {
 													)}
 
 													<div className="flex items-center gap-2 pt-2">
-														<span
-															className={`px-3 py-1 rounded-full text-xs font-semibold ${
-																event.is_free
-																	? 'bg-green-100 text-green-700'
-																	: 'bg-blue-100 text-blue-700'
-															}`}
-														>
-															{event.is_free ? 'Gratuito' : `R$ ${Number(event.price || 0).toFixed(2)}`}
-														</span>
+														{event.is_free && (
+															<span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+																Gratuito
+															</span>
+														)}
 														<span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold capitalize">
 															{event.event_type === 'in_person'
 																? 'Presencial'

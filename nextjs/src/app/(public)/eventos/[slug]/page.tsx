@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { fetchEventBySlug } from '@/lib/directus/fetchers';
 import DirectusImage from '@/components/shared/DirectusImage';
+import Link from 'next/link';
 import { Calendar, MapPin, Clock, Users, DollarSign, Globe, Share2, Tag, Ticket, Building2, Mail, Phone, ExternalLink, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface EventPageProps {
@@ -38,7 +39,7 @@ export default async function EventPage({ params }: EventPageProps) {
 
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString);
-		
+
 return date.toLocaleDateString('pt-BR', {
 			day: '2-digit',
 			month: 'long',
@@ -48,7 +49,7 @@ return date.toLocaleDateString('pt-BR', {
 
 	const formatTime = (dateString: string) => {
 		const date = new Date(dateString);
-		
+
 return date.toLocaleTimeString('pt-BR', {
 			hour: '2-digit',
 			minute: '2-digit',
@@ -231,11 +232,24 @@ return date.toLocaleTimeString('pt-BR', {
 															)}
 														</div>
 														<div className="text-right ml-4">
-															<p className="text-2xl font-bold text-purple-600">
-																R$ {Number(ticket.buyer_price || ticket.price).toFixed(2)}
-															</p>
-															{ticket.service_fee_type === 'passed_to_buyer' && (
-																<p className="text-xs text-gray-500">+ taxa de serviço</p>
+															{ticket.service_fee_type === 'passed_to_buyer' ? (
+																<div>
+																	<div className="text-sm text-gray-500 line-through">
+																		R$ {Number(ticket.price).toFixed(2)}
+																	</div>
+																	<div className="text-2xl font-bold text-purple-600">
+																		R$ {Number(ticket.buyer_price || ticket.price).toFixed(2)}
+																	</div>
+																	<div className="text-xs text-gray-500 mt-1">
+																		(inclui taxa de conveniência)
+																	</div>
+																</div>
+															) : (
+																<div>
+																	<p className="text-2xl font-bold text-purple-600">
+																		R$ {Number(ticket.buyer_price || ticket.price).toFixed(2)}
+																	</p>
+																</div>
 															)}
 														</div>
 													</div>
@@ -286,9 +300,9 @@ return date.toLocaleTimeString('pt-BR', {
 														</div>
 
 														{!availability.isSoldOut && saleActive && (
-															<button className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors">
+															<Link href={`/eventos/${slug}/checkout`} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors inline-block text-center">
 																Selecionar
-															</button>
+															</Link>
 														)}
 													</div>
 
@@ -456,6 +470,9 @@ return date.toLocaleTimeString('pt-BR', {
 													...(event.tickets?.map((t: any) => Number(t.buyer_price || t.price)) || [0])
 												).toFixed(2)}
 											</p>
+											<p className="text-xs text-gray-500 mt-1">
+												Já inclui taxa de conveniência
+											</p>
 										</div>
 									) : (
 										<div>
@@ -465,14 +482,6 @@ return date.toLocaleTimeString('pt-BR', {
 													Ingressos indisponíveis
 												</p>
 											</div>
-											{event.price && event.price > 0 && (
-												<div>
-													<p className="text-sm text-gray-600 mb-2">Preço estimado</p>
-													<p className="text-3xl font-bold text-gray-900">
-														R$ {Number(event.price).toFixed(2)}
-													</p>
-												</div>
-											)}
 										</div>
 									)}
 								</div>
@@ -483,9 +492,9 @@ return date.toLocaleTimeString('pt-BR', {
 									</button>
 								) : hasTickets ? (
 									<>
-										<button className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-colors duration-200 text-lg">
+										<Link href={`/eventos/${slug}/checkout`} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-colors duration-200 text-lg inline-block text-center">
 											Comprar ingressos
-										</button>
+										</Link>
 										<p className="text-center text-sm text-gray-500 mt-4">Parcele em até 12x</p>
 									</>
 								) : (

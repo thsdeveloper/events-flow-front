@@ -242,10 +242,6 @@ export interface EventCategory {
 export interface EventConfigurations {
 	/** @primaryKey */
 	id: number;
-	/** @description Taxa de serviço padrão em percentual (ex: 10 para 10%) @required */
-	service_fee_percentage: number;
-	/** @description Descrição da taxa para exibir aos organizadores */
-	service_fee_description?: string | null;
 	/** @description Permitir que organizadores criem eventos gratuitos */
 	allow_free_events?: boolean | null;
 	/** @description Limite máximo de tipos de ingressos por evento (deixe vazio para ilimitado) */
@@ -254,6 +250,14 @@ export interface EventConfigurations {
 	ticket_code_prefix?: string | null;
 	/** @description Enviar email de confirmação automático após compra */
 	registration_confirmation_email?: boolean | null;
+	/** @description Taxa da plataforma em percentual sobre o valor base do ingresso (ex: 5 para 5%) @required */
+	platform_fee_percentage: number;
+	/** @description Taxa percentual do Stripe (ex: 4.35 para 4.35%) @required */
+	stripe_percentage_fee: number;
+	/** @description Taxa fixa do Stripe por transação em R$ (ex: 0.50) @required */
+	stripe_fixed_fee: number;
+	/** @description Método de cálculo da taxa de conveniência @required */
+	convenience_fee_calculation_method: 'buyer_pays' | 'organizer_absorbs';
 }
 
 export interface EventRegistration {
@@ -293,6 +297,14 @@ export interface EventRegistration {
 	service_fee?: number | null;
 	/** @description Valor total pago */
 	total_amount?: number | null;
+	/** @description ID do Payment Intent no Stripe */
+	stripe_payment_intent_id?: string | null;
+	/** @description ID da sessão de checkout */
+	stripe_checkout_session_id?: string | null;
+	/** @description ID do reembolso no Stripe (se aplicável) */
+	stripe_refund_id?: string | null;
+	/** @description Método de pagamento usado */
+	payment_method?: 'card' | 'pix' | 'boleto' | 'free' | null;
 }
 
 export interface Event {
@@ -337,8 +349,6 @@ export interface Event {
 	registration_end?: string | null;
 	/** @description Evento gratuito? */
 	is_free?: boolean | null;
-	/** @description Preço do ingresso (se pago) */
-	price?: number | null;
 	/** @description Tags para facilitar busca */
 	tags?: string[] | null;
 	/** @description Destacar evento? */
@@ -560,6 +570,16 @@ export interface Organizer {
 	document?: string | null;
 	/** @description Usuário responsável pelo organizador @required */
 	user_id: DirectusUser | string;
+	/** @required */
+	name: string;
+	/** @description ID da conta Stripe Connect do organizador */
+	stripe_account_id?: string | null;
+	/** @description Onboarding Stripe completado? */
+	stripe_onboarding_complete?: boolean;
+	/** @description Conta habilitada para receber pagamentos */
+	stripe_charges_enabled?: boolean;
+	/** @description Conta habilitada para receber transferências */
+	stripe_payouts_enabled?: boolean;
 	events?: Event[] | string[];
 }
 
@@ -602,6 +622,26 @@ export interface Page {
 	user_updated?: DirectusUser | string | null;
 	/** @description Create and arrange different content blocks (like text, images, or videos) to build your page. */
 	blocks?: PageBlock[] | string[];
+}
+
+export interface PaymentTransaction {
+	/** @primaryKey */
+	id: string;
+	/** @description Inscrição relacionada */
+	registration_id?: EventRegistration | string | null;
+	/** @description ID do evento webhook do Stripe */
+	stripe_event_id?: string | null;
+	/** @description ID do objeto Stripe (payment_intent, refund, etc) */
+	stripe_object_id?: string | null;
+	/** @description Tipo do evento Stripe */
+	event_type?: `payment_intent.succeeded` | `payment_intent.payment_failed` | `checkout.session.completed` | `charge.refunded` | `account.updated` | null;
+	/** @description Valor da transação em reais */
+	amount?: number | null;
+	/** @description Status da transação */
+	status?: 'succeeded' | 'failed' | 'pending' | 'refunded' | null;
+	/** @description Dados completos do webhook Stripe */
+	metadata?: Record<string, any> | null;
+	date_created?: string | null;
 }
 
 export interface Post {
@@ -1125,6 +1165,7 @@ export interface Schema {
 	organizers: Organizer[];
 	page_blocks: PageBlock[];
 	pages: Page[];
+	payment_transactions: PaymentTransaction[];
 	posts: Post[];
 	redirects: Redirect[];
 	directus_access: DirectusAccess[];
@@ -1184,6 +1225,7 @@ export enum CollectionNames {
 	organizers = 'organizers',
 	page_blocks = 'page_blocks',
 	pages = 'pages',
+	payment_transactions = 'payment_transactions',
 	posts = 'posts',
 	redirects = 'redirects',
 	directus_access = 'directus_access',

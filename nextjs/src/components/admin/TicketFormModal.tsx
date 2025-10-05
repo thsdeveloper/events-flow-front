@@ -6,6 +6,7 @@ import { createItem, updateItem } from '@directus/sdk';
 import { useDirectusClient } from '@/hooks/useDirectusClient';
 import { EventTicket } from '@/types/directus-schema';
 import { useToast } from '@/hooks/use-toast';
+import { calculateFees, formatCurrency, calculateConvenienceFeePercentage, type FeeConfig } from '@/lib/fees';
 
 interface TicketFormModalProps {
 	isOpen: boolean;
@@ -14,10 +15,6 @@ interface TicketFormModalProps {
 	ticketType: 'paid' | 'free';
 	editingTicket: EventTicket | null;
 	onTicketSaved: () => void;
-}
-
-interface EventConfiguration {
-	service_fee_percentage: number;
 }
 
 export default function TicketFormModal({
@@ -31,12 +28,15 @@ export default function TicketFormModal({
 	const client = useDirectusClient();
 	const { toast } = useToast();
 	const [isLoading, setIsLoading] = useState(false);
-	const [serviceFeePercentage, setServiceFeePercentage] = useState(10);
+	const [feeConfig, setFeeConfig] = useState<FeeConfig>({
+		platformFeePercentage: 5,
+		stripePercentageFee: 4.35,
+		stripeFixedFee: 0.5,
+	});
 	const [serviceFeeType, setServiceFeeType] = useState<'passed_to_buyer' | 'absorbed'>(
 		'passed_to_buyer'
 	);
 	const [price, setPrice] = useState('');
-	const [buyerPrice, setBuyerPrice] = useState(0);
 
 	// Form fields
 	const [title, setTitle] = useState('');
@@ -48,7 +48,47 @@ export default function TicketFormModal({
 	const [maxQuantity, setMaxQuantity] = useState('10');
 	const [visibility, setVisibility] = useState<'public' | 'invited_only' | 'manual'>('public');
 
-	// Service fee is set to default 10% - can be made configurable later if needed
+	// Buscar configuração de taxas diretamente do Directus
+	useEffect(() => {
+		const fetchConfig = async () => {
+			if (!isOpen) return; // Only fetch when modal is open
+
+			try {
+				const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL;
+
+				// Fetch directly from Directus to avoid caching issues
+				const response = await fetch(
+					`${directusUrl}/items/event_configurations?limit=1&fields=platform_fee_percentage,stripe_percentage_fee,stripe_fixed_fee`,
+					{
+						cache: 'no-store', // Force fresh data
+					}
+				);
+
+				if (!response.ok) {
+					throw new Error('Failed to fetch event configuration');
+				}
+
+				const { data } = await response.json();
+
+				if (data) {
+					// Directus pode retornar array ou objeto direto dependendo da query
+					const config = Array.isArray(data) ? data[0] : data;
+					console.log('Fetched config:', config); // Debug log
+
+					setFeeConfig({
+						platformFeePercentage: Number(config.platform_fee_percentage || 5),
+						stripePercentageFee: Number(config.stripe_percentage_fee || 4.35),
+						stripeFixedFee: Number(config.stripe_fixed_fee || 0.5),
+					});
+				}
+			} catch (error) {
+				console.error('Erro ao buscar configuração de taxas:', error);
+				// Keep default values on error
+			}
+		};
+
+		fetchConfig();
+	}, [isOpen]); // Re-fetch when modal opens
 
 	// Load editing ticket data
 	useEffect(() => {
@@ -66,20 +106,14 @@ export default function TicketFormModal({
 		}
 	}, [editingTicket]);
 
-	// Calculate buyer price
-	useEffect(() => {
-		if (ticketType === 'paid' && price) {
-			const priceNum = parseFloat(price);
-			if (serviceFeeType === 'passed_to_buyer') {
-				const calculated = priceNum + priceNum * (serviceFeePercentage / 100);
-				setBuyerPrice(calculated);
-			} else {
-				setBuyerPrice(priceNum);
-			}
-		} else {
-			setBuyerPrice(0);
-		}
-	}, [price, serviceFeeType, serviceFeePercentage, ticketType]);
+	// Calcular taxas usando a nova função
+	const fees = ticketType === 'paid' && price
+		? calculateFees(parseFloat(price), serviceFeeType, feeConfig)
+		: null;
+
+	const convenienceFeePercentage = ticketType === 'paid' && price
+		? calculateConvenienceFeePercentage(parseFloat(price), feeConfig)
+		: 0;
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -273,10 +307,20 @@ return;
 
 							<div>
 								<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-									Taxa de Serviço ({serviceFeePercentage}%)
+									Taxa de Conveniência
 								</label>
+								<div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+									<p className="text-sm text-blue-800 dark:text-blue-300">
+										<Info className="inline size-4 mr-1" />
+										<strong>Recomendação:</strong> No modelo "Comprador paga", o organizador recebe quase o valor total do ingresso.
+									</p>
+								</div>
 								<div className="space-y-3">
-									<label className="flex items-start gap-3 p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+									<label className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+										serviceFeeType === 'passed_to_buyer'
+											? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+											: 'border-gray-300 dark:border-gray-600'
+									}`}>
 										<input
 											type="radio"
 											value="passed_to_buyer"
@@ -285,27 +329,55 @@ return;
 											className="mt-1"
 										/>
 										<div className="flex-1">
-											<div className="font-medium text-gray-900 dark:text-white">
-												Repassar ao Comprador
+											<div className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
+												Comprador paga a taxa (recomendado)
+												<span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-2 py-0.5 rounded-full">
+													Padrão do mercado
+												</span>
 											</div>
 											<div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-												A taxa de serviço é exibida junto com o valor do ingresso e não será
-												mostrada ao comprador
+												Você recebe quase o valor total. A taxa de conveniência (~{convenienceFeePercentage.toFixed(2)}%) é cobrada do comprador
 											</div>
-											{price && serviceFeeType === 'passed_to_buyer' && (
-												<div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-sm">
-													<div className="text-gray-700 dark:text-gray-300">
-														Comprador paga: <strong>R$ {buyerPrice.toFixed(2)}</strong>
-													</div>
-													<div className="text-gray-600 dark:text-gray-400 text-xs mt-1">
-														Você recebe: R$ {parseFloat(price).toFixed(2)}
+											{fees && serviceFeeType === 'passed_to_buyer' && (
+												<div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+													<div className="space-y-2 text-sm">
+														<div className="flex justify-between">
+															<span className="text-gray-600 dark:text-gray-400">Ingresso:</span>
+															<span className="font-medium">{formatCurrency(fees.ticketPrice)}</span>
+														</div>
+														<div className="flex justify-between text-blue-600 dark:text-blue-400">
+															<span>Taxa de conveniência:</span>
+															<span className="font-medium">{formatCurrency(fees.convenienceFee)}</span>
+														</div>
+														<div className="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+															<span className="font-semibold text-gray-900 dark:text-white">Comprador paga:</span>
+															<span className="font-bold text-lg">{formatCurrency(fees.buyerPrice)}</span>
+														</div>
+														<div className="pt-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
+															<div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+																<span>Taxa Stripe ({feeConfig.stripePercentageFee}% + {formatCurrency(feeConfig.stripeFixedFee)}):</span>
+																<span>-{formatCurrency(fees.stripeFee)}</span>
+															</div>
+															<div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+																<span>Taxa Plataforma ({feeConfig.platformFeePercentage}%):</span>
+																<span>-{formatCurrency(fees.platformFee)}</span>
+															</div>
+														</div>
+														<div className="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+															<span className="font-semibold text-green-600 dark:text-green-400">Você recebe:</span>
+															<span className="font-bold text-green-600 dark:text-green-400">{formatCurrency(fees.organizerReceives)}</span>
+														</div>
 													</div>
 												</div>
 											)}
 										</div>
 									</label>
 
-									<label className="flex items-start gap-3 p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+									<label className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+										serviceFeeType === 'absorbed'
+											? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20'
+											: 'border-gray-300 dark:border-gray-600'
+									}`}>
 										<input
 											type="radio"
 											value="absorbed"
@@ -315,24 +387,32 @@ return;
 										/>
 										<div className="flex-1">
 											<div className="font-medium text-gray-900 dark:text-white">
-												Absorver a Taxa
+												Organizador absorve as taxas
 											</div>
 											<div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-												Você absorve a taxa de serviço. O comprador paga apenas o valor do
-												ingresso
+												Você absorve todas as taxas. O comprador paga apenas o valor do ingresso
 											</div>
-											{price && serviceFeeType === 'absorbed' && (
-												<div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded text-sm">
-													<div className="text-gray-700 dark:text-gray-300">
-														Comprador paga: <strong>R$ {parseFloat(price).toFixed(2)}</strong>
-													</div>
-													<div className="text-gray-600 dark:text-gray-400 text-xs mt-1">
-														Você recebe: R${' '}
-														{(
-															parseFloat(price) -
-															parseFloat(price) * (serviceFeePercentage / 100)
-														).toFixed(2)}{' '}
-														(taxa deduzida)
+											{fees && serviceFeeType === 'absorbed' && (
+												<div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+													<div className="space-y-2 text-sm">
+														<div className="flex justify-between">
+															<span className="font-semibold text-gray-900 dark:text-white">Comprador paga:</span>
+															<span className="font-bold text-lg">{formatCurrency(fees.buyerPrice)}</span>
+														</div>
+														<div className="pt-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
+															<div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+																<span>Taxa Stripe ({feeConfig.stripePercentageFee}% + {formatCurrency(feeConfig.stripeFixedFee)}):</span>
+																<span>-{formatCurrency(fees.stripeFee)}</span>
+															</div>
+															<div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+																<span>Taxa Plataforma ({feeConfig.platformFeePercentage}%):</span>
+																<span>-{formatCurrency(fees.platformFee)}</span>
+															</div>
+														</div>
+														<div className="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+															<span className="font-semibold text-yellow-600 dark:text-yellow-400">Você recebe:</span>
+															<span className="font-bold text-yellow-600 dark:text-yellow-400">{formatCurrency(fees.organizerReceives)}</span>
+														</div>
 													</div>
 												</div>
 											)}

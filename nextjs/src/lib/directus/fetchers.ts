@@ -196,7 +196,6 @@ export const fetchPageData = async (permalink: string, postPage = 1) => {
 									'location_address',
 									'event_type',
 									'is_free',
-									'price',
 									'featured',
 								],
 								filter,
@@ -251,7 +250,6 @@ export const fetchEventBySlug = async (slug: string) => {
 					'registration_start',
 					'registration_end',
 					'is_free',
-					'price',
 					'featured',
 					'tags',
 					{
