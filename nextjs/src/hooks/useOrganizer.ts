@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useServerAuth } from './useServerAuth';
 import { useDirectusClient } from './useDirectusClient';
 import { readItems } from '@directus/sdk';
 import type { Organizer } from '@/types/directus-schema';
 
 export function useOrganizer() {
-	const { user } = useAuth();
+	const { user } = useServerAuth();
 	const client = useDirectusClient();
 	const [organizer, setOrganizer] = useState<Organizer | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -17,7 +17,8 @@ export function useOrganizer() {
 		async function fetchOrganizer() {
 			if (!client || !user?.id) {
 				setLoading(false);
-				return;
+				
+return;
 			}
 
 			try {

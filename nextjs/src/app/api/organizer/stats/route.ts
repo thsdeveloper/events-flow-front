@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 			const events = await client.request(
 				readItems('events', {
 					filter: {
-						organizer: {
+						organizer_id: {
 							_eq: organizerId,
 						},
 					},
@@ -50,11 +50,11 @@ export async function GET(request: NextRequest) {
 					const registrations = await client.request(
 						readItems('event_registrations', {
 							filter: {
-								event: {
+								event_id: {
 									_in: eventIds,
 								},
 							},
-							fields: ['id', 'amount_paid', 'payment_status'],
+							fields: ['id', 'payment_amount', 'payment_status'],
 							limit: -1,
 						})
 					);
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
 					// Calculate total revenue from paid registrations
 					totalRevenue = registrations
 						.filter((reg: any) => reg.payment_status === 'paid')
-						.reduce((sum: number, reg: any) => sum + (reg.amount_paid || 0), 0);
+						.reduce((sum: number, reg: any) => sum + (reg.payment_amount || 0), 0);
 				} catch (regError) {
 					console.error('Error fetching registrations:', regError);
 					// Continue with 0 registrations if collection doesn't exist
@@ -85,7 +85,8 @@ export async function GET(request: NextRequest) {
 		});
 	} catch (error) {
 		console.error('Error fetching organizer stats:', error);
-		return NextResponse.json(
+		
+return NextResponse.json(
 			{
 				error: 'Failed to fetch stats',
 				details: error instanceof Error ? error.message : 'Unknown error'

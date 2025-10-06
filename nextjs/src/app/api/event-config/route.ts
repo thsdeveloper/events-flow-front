@@ -15,7 +15,8 @@ export async function GET() {
 
 		if (!publicToken) {
 			console.error('[event-config] No public token available');
-			return NextResponse.json(
+			
+return NextResponse.json(
 				{ error: 'Server configuration error' },
 				{ status: 500 }
 			);
@@ -47,7 +48,8 @@ export async function GET() {
 
 		if (!data || data.length === 0) {
 			console.log('[event-config] No data found, returning defaults');
-			return NextResponse.json({
+			
+return NextResponse.json({
 				platformFeePercentage: 5,
 				stripePercentageFee: 4.35,
 				stripeFixedFee: 0.5,

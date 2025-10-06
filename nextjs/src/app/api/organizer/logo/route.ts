@@ -47,7 +47,8 @@ export async function POST(request: NextRequest) {
 		});
 	} catch (error) {
 		console.error('Error uploading logo:', error);
-		return NextResponse.json(
+		
+return NextResponse.json(
 			{ error: 'Failed to upload logo' },
 			{ status: 500 }
 		);

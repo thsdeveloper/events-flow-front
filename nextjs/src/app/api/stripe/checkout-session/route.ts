@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe, formatAmountForStripe } from '@/lib/stripe/server';
 import { createDirectus, rest, readItems, createItem, updateItem, staticToken } from '@directus/sdk';
-import type { DirectusSchema } from '@/types/directus-schema';
+import type { Schema } from '@/types/directus-schema';
 import { calculateFees, type FeeConfig } from '@/lib/fees';
 
 const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL || 'http://localhost:8055';
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       throw new Error('DIRECTUS_FORM_TOKEN não configurado');
     }
 
-    const directus = createDirectus<DirectusSchema>(directusUrl)
+    const directus = createDirectus<Schema>(directusUrl)
       .with(rest())
       .with(staticToken(formToken));
 
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Buscar configuração de taxas
-    const configurations = await directus.request(readItems('event_configurations'));
+    const configurations = await directus.request(readItems('event_configurations' as any));
     const config = configurations[0];
 
     if (!config) {

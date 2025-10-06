@@ -2,11 +2,11 @@
 
 import * as React from 'react';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface AuthModalProps {
 	isOpen: boolean;
@@ -21,8 +21,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 	const [lastName, setLastName] = useState('');
 	const [error, setError] = useState('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
-
-	const { login, register } = useAuth();
+	const router = useRouter();
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -31,18 +30,41 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
 		try {
 			if (isLogin) {
-				await login(email, password);
+				// Call login API
+				const response = await fetch('/api/auth/login', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ email, password }),
+				});
+
+				if (!response.ok) {
+					const data = await response.json();
+					throw new Error(data.error || 'Login failed');
+				}
 			} else {
 				if (!firstName || !lastName) {
 					setError('Por favor, preencha todos os campos');
 					setIsSubmitting(false);
-					
-return;
+
+					return;
 				}
-				await register(email, password, firstName, lastName);
+
+				// Call register API
+				const response = await fetch('/api/auth/register', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ email, password, firstName, lastName }),
+				});
+
+				if (!response.ok) {
+					const data = await response.json();
+					throw new Error(data.error || 'Registration failed');
+				}
 			}
+
 			onClose();
 			resetForm();
+			router.refresh(); // Refresh to update server components with new auth state
 		} catch (err: any) {
 			setError(err.message || 'Ocorreu um erro. Tente novamente.');
 		} finally {

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useState } from 'react';
-import { User, Heart, Calendar, CalendarCheck, HelpCircle, LogOut, LogIn } from 'lucide-react';
+import { User, Heart, Calendar, CalendarCheck, HelpCircle, LogOut, LogIn, Ticket } from 'lucide-react';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -12,11 +12,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { AuthModal } from '@/components/ui/auth-modal';
-import { useAuth } from '@/contexts/AuthContext';
+import { useServerAuth } from '@/hooks/useServerAuth';
 import Link from 'next/link';
 
 export function UserMenuDropdown() {
-	const { user, logout, isLoading } = useAuth();
+	const { user, logout, isLoading } = useServerAuth();
 	const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
 	if (isLoading) {
@@ -48,13 +48,13 @@ export function UserMenuDropdown() {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<button className="flex items-center justify-center size-10 rounded-full bg-blue-500 text-white font-semibold hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-colors">
+				<button className="flex items-center justify-center size-10 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 transition-all duration-300 shadow-lg hover:shadow-xl">
 					{userInitials}
 				</button>
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="end" className="w-56">
+			<DropdownMenuContent align="end" className="w-64">
 				<div className="flex items-center gap-3 px-2 py-3">
-					<div className="flex items-center justify-center size-10 rounded-full bg-blue-500 text-white font-semibold">
+					<div className="flex items-center justify-center size-10 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold shadow-md">
 						{userInitials}
 					</div>
 					<div className="flex flex-col">
@@ -64,30 +64,45 @@ export function UserMenuDropdown() {
 				</div>
 				<DropdownMenuSeparator />
 				<DropdownMenuItem asChild>
-					<Link href="/account">
+					<Link href="/perfil" className="cursor-pointer">
 						<User className="mr-2 size-4" />
 						<span>Minha conta</span>
 					</Link>
 				</DropdownMenuItem>
-				<DropdownMenuItem>
-					<Heart className="mr-2 size-4" />
-					<span>Favoritos</span>
+				<DropdownMenuItem asChild>
+					<Link href="/meus-ingressos" className="cursor-pointer">
+						<Ticket className="mr-2 size-4" />
+						<span>Meus ingressos</span>
+					</Link>
 				</DropdownMenuItem>
-				<DropdownMenuItem>
-					<Calendar className="mr-2 size-4" />
-					<span>Criar evento</span>
-				</DropdownMenuItem>
-				<DropdownMenuItem>
-					<CalendarCheck className="mr-2 size-4" />
-					<span>Meus eventos</span>
-				</DropdownMenuItem>
-				<DropdownMenuSeparator />
-				<DropdownMenuItem>
-					<HelpCircle className="mr-2 size-4" />
-					<span>Central de Ajuda</span>
+				<DropdownMenuItem asChild>
+					<Link href="/favoritos" className="cursor-pointer">
+						<Heart className="mr-2 size-4" />
+						<span>Favoritos</span>
+					</Link>
 				</DropdownMenuItem>
 				<DropdownMenuSeparator />
-				<DropdownMenuItem onClick={logout}>
+				<DropdownMenuItem asChild>
+					<Link href="/admin/eventos/novo" className="cursor-pointer">
+						<Calendar className="mr-2 size-4" />
+						<span>Criar evento</span>
+					</Link>
+				</DropdownMenuItem>
+				<DropdownMenuItem asChild>
+					<Link href="/admin/eventos" className="cursor-pointer">
+						<CalendarCheck className="mr-2 size-4" />
+						<span>Meus eventos</span>
+					</Link>
+				</DropdownMenuItem>
+				<DropdownMenuSeparator />
+				<DropdownMenuItem asChild>
+					<Link href="/ajuda" className="cursor-pointer">
+						<HelpCircle className="mr-2 size-4" />
+						<span>Central de Ajuda</span>
+					</Link>
+				</DropdownMenuItem>
+				<DropdownMenuSeparator />
+				<DropdownMenuItem onClick={logout} className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950">
 					<LogOut className="mr-2 size-4" />
 					<span>Sair</span>
 				</DropdownMenuItem>

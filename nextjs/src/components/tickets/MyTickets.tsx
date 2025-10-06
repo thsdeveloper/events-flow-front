@@ -119,7 +119,7 @@ export default function MyTickets({ registrations }: MyTicketsProps) {
 	if (registrations.length === 0) {
 		return (
 			<div className="rounded-lg border border-dashed border-gray-300 p-12 text-center">
-				<Ticket className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+				<Ticket className="mx-auto mb-4 size-12 text-gray-400" />
 				<h3 className="mb-2 text-lg font-semibold">Nenhum ingresso encontrado</h3>
 				<p className="mb-6 text-muted-foreground">
 					Você ainda não comprou nenhum ingresso. Explore os eventos disponíveis!
@@ -156,7 +156,7 @@ export default function MyTickets({ registrations }: MyTicketsProps) {
 							<h3 className="mb-2 text-lg font-semibold">{registration.event_id.title}</h3>
 							<div className="mb-4 space-y-2 text-sm text-muted-foreground">
 								<div className="flex items-center gap-2">
-									<Calendar className="h-4 w-4" />
+									<Calendar className="size-4" />
 									<span>
 										{new Date(registration.event_id.event_date).toLocaleDateString('pt-BR', {
 											day: '2-digit',
@@ -169,12 +169,12 @@ export default function MyTickets({ registrations }: MyTicketsProps) {
 								</div>
 								{registration.event_id.location && (
 									<div className="flex items-center gap-2">
-										<MapPin className="h-4 w-4" />
+										<MapPin className="size-4" />
 										<span className="line-clamp-1">{registration.event_id.location}</span>
 									</div>
 								)}
 								<div className="flex items-center gap-2">
-									<Ticket className="h-4 w-4" />
+									<Ticket className="size-4" />
 									<span>{registration.ticket_type_id.title} (x{registration.quantity})</span>
 								</div>
 							</div>
@@ -249,7 +249,7 @@ export default function MyTickets({ registrations }: MyTicketsProps) {
 								onClick={handlePrintTicket}
 								className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-3 text-white hover:bg-purple-700"
 							>
-								<Download className="h-4 w-4" />
+								<Download className="size-4" />
 								Imprimir Ingresso
 							</button>
 							<button

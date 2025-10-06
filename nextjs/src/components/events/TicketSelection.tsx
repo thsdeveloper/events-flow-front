@@ -6,22 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Minus, Plus } from 'lucide-react';
-
-export interface EventTicket {
-  id: string;
-  title: string;
-  description: string | null;
-  price: number | string; // Decimal fields come as strings from Directus
-  quantity: number;
-  quantity_sold: number;
-  service_fee_type: 'absorbed' | 'passed_to_buyer';
-  buyer_price: number | string; // Decimal fields come as strings from Directus
-  status: 'active' | 'sold_out' | 'inactive';
-  min_quantity_per_purchase: number | null;
-  max_quantity_per_purchase: number | null;
-  sale_start_date: string | null;
-  sale_end_date: string | null;
-}
+import type { EventTicket } from '@/types/directus-schema';
 
 export interface TicketSelectionItem {
   ticketId: string;
@@ -57,7 +42,7 @@ export default function TicketSelection({
       if (ticket.status !== 'active') return false;
 
       // Verificar se há estoque
-      const available = ticket.quantity - ticket.quantity_sold;
+      const available = ticket.quantity - (ticket.quantity_sold || 0 || 0);
       if (available <= 0) return false;
 
       // Verificar período de vendas
@@ -109,7 +94,7 @@ export default function TicketSelection({
     const newQuantity = Math.max(0, currentQuantity + delta);
 
     // Validar limites
-    const available = ticket.quantity - ticket.quantity_sold;
+    const available = ticket.quantity - (ticket.quantity_sold || 0 || 0);
     const maxAllowed = Math.min(
       available,
       ticket.max_quantity_per_purchase || available
@@ -132,7 +117,7 @@ export default function TicketSelection({
     if (!ticket) return;
 
     const quantity = parseInt(value) || 0;
-    const available = ticket.quantity - ticket.quantity_sold;
+    const available = ticket.quantity - (ticket.quantity_sold || 0);
     const maxAllowed = Math.min(
       available,
       ticket.max_quantity_per_purchase || available
@@ -177,7 +162,7 @@ export default function TicketSelection({
           </Card>
         ) : (
           availableTickets.map((ticket) => {
-            const available = ticket.quantity - ticket.quantity_sold;
+            const available = ticket.quantity - (ticket.quantity_sold || 0);
             const selected = selectedTickets.get(ticket.id) || 0;
             const isAbsorbed = ticket.service_fee_type === 'absorbed';
 
@@ -238,7 +223,7 @@ export default function TicketSelection({
                         onClick={() => handleQuantityChange(ticket.id, -1)}
                         disabled={selected === 0 || isLoading}
                       >
-                        <Minus className="h-4 w-4" />
+                        <Minus className="size-4" />
                       </Button>
                       <Input
                         type="number"
@@ -255,7 +240,7 @@ export default function TicketSelection({
                         onClick={() => handleQuantityChange(ticket.id, 1)}
                         disabled={selected >= available || isLoading}
                       >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="size-4" />
                       </Button>
                     </div>
                   </div>

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useServerAuth } from '@/hooks/useServerAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { User, Building2, Loader2, Mail, Camera, Shield, BarChart3, CheckCircle2, AlertTriangle } from 'lucide-react';
@@ -11,7 +11,7 @@ import { OrganizerProfileForm } from './OrganizerProfileForm';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 export function AccountPageContent() {
-	const { user, isLoading } = useAuth();
+	const { user, isLoading } = useServerAuth();
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const [activeTab, setActiveTab] = useState('profile');

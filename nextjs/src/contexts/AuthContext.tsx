@@ -1,5 +1,21 @@
 'use client';
 
+/**
+ * @deprecated This AuthContext is deprecated and should not be used in new code.
+ *
+ * Authentication has been migrated to server-side httpOnly cookies for better security.
+ *
+ * For Client Components, use:
+ * - useServerAuth() hook from '@/hooks/useServerAuth' for auth state
+ * - Direct API calls to /api/auth/login, /api/auth/register, /api/auth/logout
+ *
+ * For Server Components and API routes:
+ * - Use getCurrentUser() from '@/lib/auth/server-auth'
+ * - Use getAuthToken() from '@/lib/auth/cookies'
+ *
+ * This file is kept only for backward compatibility and will be removed in a future version.
+ */
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface User {

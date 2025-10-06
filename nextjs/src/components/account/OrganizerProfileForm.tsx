@@ -420,7 +420,7 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 
 					<div className="space-y-6">
 						<StripeStatusCard
-							stripeAccountId={organizer.stripe_account_id}
+							stripeAccountId={organizer.stripe_account_id || null}
 							onboardingComplete={organizer.stripe_onboarding_complete || false}
 							chargesEnabled={organizer.stripe_charges_enabled || false}
 							payoutsEnabled={organizer.stripe_payouts_enabled || false}

@@ -115,9 +115,11 @@ export function calculateBuyerPrice(
 ): number {
   if (serviceFeeType === 'passed_to_buyer') {
     const convenienceFee = calculateConvenienceFee(ticketPrice, config);
-    return Math.round((ticketPrice + convenienceFee) * 100) / 100;
+    
+return Math.round((ticketPrice + convenienceFee) * 100) / 100;
   }
-  return Math.round(ticketPrice * 100) / 100;
+  
+return Math.round(ticketPrice * 100) / 100;
 }
 
 /**
@@ -140,5 +142,6 @@ export function calculateConvenienceFeePercentage(
   config: FeeConfig
 ): number {
   const convenienceFee = calculateConvenienceFee(ticketPrice, config);
-  return Math.round((convenienceFee / ticketPrice) * 10000) / 100; // Arredondar para 2 casas decimais
+  
+return Math.round((convenienceFee / ticketPrice) * 10000) / 100; // Arredondar para 2 casas decimais
 }

@@ -2,10 +2,17 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useServerAuth } from '@/hooks/useServerAuth';
 
+/**
+ * ProtectedRoute component - Client-side protection wrapper
+ *
+ * Note: Most authentication is now handled by middleware (src/middleware.ts)
+ * which redirects unauthorized users before they reach components.
+ * This component provides additional client-side protection for edge cases.
+ */
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-	const { user, isLoading } = useAuth();
+	const { user, isLoading } = useServerAuth();
 	const router = useRouter();
 
 	useEffect(() => {

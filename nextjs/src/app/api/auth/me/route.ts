@@ -1,40 +1,31 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { readMe } from '@directus/sdk';
-import { getAuthenticatedClient } from '@/lib/directus/directus';
+import { NextResponse } from 'next/server';
+import { getServerAuth } from '@/lib/auth/server-auth';
 
-export async function GET(request: NextRequest) {
+/**
+ * Get current authenticated user from httpOnly cookies
+ * Used by useServerAuth() hook for Client Components
+ */
+export async function GET() {
 	try {
-		// Get token from Authorization header
-		const authHeader = request.headers.get('authorization');
+		const auth = await getServerAuth();
 
-		if (!authHeader || !authHeader.startsWith('Bearer ')) {
-			return NextResponse.json(
-				{ error: 'Token não fornecido' },
-				{ status: 401 }
-			);
+		if (!auth) {
+
+			return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 		}
 
-		const token = authHeader.replace('Bearer ', '');
-
-		// Use the authenticated client helper
-		const client = getAuthenticatedClient(token);
-
-		// Get user data with all relations
-		const userData = await client.request(
-			readMe({
-				fields: ['*', { role: ['*'] }, { avatar: ['*'] }],
-			})
-		);
-
 		return NextResponse.json({
-			user: userData
+			user: {
+				id: auth.user.id,
+				email: auth.user.email,
+				first_name: auth.user.first_name,
+				last_name: auth.user.last_name,
+				role: auth.user.role,
+			},
 		});
-	} catch (error: any) {
-		console.error('Get user error:', error);
+	} catch (error) {
+		console.error('[Auth API] Error getting current user:', error);
 
-		return NextResponse.json(
-			{ error: 'Token inválido ou expirado' },
-			{ status: 401 }
-		);
+		return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
 	}
 }

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { fetchEventBySlug } from '@/lib/directus/fetchers';
 import EventCheckout from '@/components/events/EventCheckout';
+import type { EventTicket } from '@/types/directus-schema';
 
 interface CheckoutPageProps {
   params: Promise<{
@@ -24,10 +25,12 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
   }
 
   // Filtrar apenas ingressos ativos
-  const activeTickets = event.tickets.filter((ticket: any) => {
-    return ticket.status === 'active' &&
-           (ticket.quantity - (ticket.quantity_sold || 0)) > 0;
-  });
+  const activeTickets = (event.tickets || [])
+    .filter((ticket): ticket is EventTicket => typeof ticket !== 'string')
+    .filter((ticket) => {
+      return ticket.status === 'active' &&
+             (ticket.quantity - (ticket.quantity_sold || 0)) > 0;
+    });
 
   if (activeTickets.length === 0) {
     return (

@@ -35,7 +35,8 @@ export async function PATCH(request: NextRequest) {
 		return NextResponse.json({ success: true, organizer: updatedOrganizer });
 	} catch (error) {
 		console.error('Error updating organizer profile:', error);
-		return NextResponse.json(
+		
+return NextResponse.json(
 			{ error: 'Failed to update organizer profile' },
 			{ status: 500 }
 		);
@@ -77,7 +78,8 @@ export async function POST(request: NextRequest) {
 		return NextResponse.json({ success: true, organizer: newOrganizer });
 	} catch (error) {
 		console.error('Error creating organizer profile:', error);
-		return NextResponse.json(
+		
+return NextResponse.json(
 			{ error: 'Failed to create organizer profile' },
 			{ status: 500 }
 		);

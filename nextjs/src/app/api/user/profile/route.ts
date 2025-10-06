@@ -33,7 +33,8 @@ export async function PATCH(request: NextRequest) {
 		return NextResponse.json({ success: true, user: updatedUser });
 	} catch (error) {
 		console.error('Error updating user profile:', error);
-		return NextResponse.json(
+		
+return NextResponse.json(
 			{ error: 'Failed to update profile' },
 			{ status: 500 }
 		);

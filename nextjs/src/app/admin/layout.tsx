@@ -1,0 +1,38 @@
+import { requireOrganizer } from '@/lib/auth/server-auth';
+import AdminSidebar from '@/components/admin/AdminSidebar';
+import AdminHeader from '@/components/admin/AdminHeader';
+
+/**
+ * Admin Area Layout (Server Component)
+ *
+ * Protected area exclusively for organizers to manage events
+ * Regular users are automatically redirected to their profile
+ */
+export default async function AdminLayout({
+	children,
+}: {
+	children: React.ReactNode;
+}) {
+	// ⭐ SSR Authentication - validates organizer role
+	const { user, organizer } = await requireOrganizer();
+
+	return (
+		<div className="min-h-screen bg-gray-50 dark:bg-slate-950">
+			{/* Sidebar */}
+			<AdminSidebar organizer={organizer} />
+
+			{/* Main Content Area */}
+			<div className="lg:pl-64 transition-all duration-300">
+				{/* Header */}
+				<AdminHeader user={user} organizer={organizer} />
+
+				{/* Page Content */}
+				<main className="p-6">
+					<div className="max-w-7xl mx-auto">
+						{children}
+					</div>
+				</main>
+			</div>
+		</div>
+	);
+}

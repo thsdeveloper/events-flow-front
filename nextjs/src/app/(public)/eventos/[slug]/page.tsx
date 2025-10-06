@@ -4,6 +4,7 @@ import { fetchEventBySlug } from '@/lib/directus/fetchers';
 import DirectusImage from '@/components/shared/DirectusImage';
 import Link from 'next/link';
 import { Calendar, MapPin, Clock, Users, DollarSign, Globe, Share2, Tag, Ticket, Building2, Mail, Phone, ExternalLink, AlertCircle, CheckCircle } from 'lucide-react';
+import type { EventCategory } from '@/types/directus-schema';
 
 interface EventPageProps {
 	params: Promise<{
@@ -86,8 +87,8 @@ return date.toLocaleTimeString('pt-BR', {
 
 	// Check if event has active tickets
 	const hasTickets = event.tickets && event.tickets.length > 0;
-	const eventOrganizer = event.organizer_id;
-	const eventCategory = event.category_id;
+	const eventOrganizer = typeof event.organizer_id !== 'string' ? event.organizer_id : null;
+	const eventCategory = typeof event.category_id !== 'string' ? event.category_id : null;
 
 	// Calculate ticket availability
 	const getTicketAvailability = (ticket: any) => {
@@ -119,50 +120,78 @@ return date.toLocaleTimeString('pt-BR', {
 	};
 
 	return (
-		<div className="min-h-screen bg-gray-50">
+		<div className="min-h-screen bg-gradient-to-b from-purple-50/50 via-white to-white dark:from-slate-900 dark:via-slate-900 dark:to-slate-900">
 			{/* Hero Section with Image */}
-			<div className="relative h-[400px] bg-gradient-to-br from-purple-900 to-indigo-800">
+			<div className="relative h-[500px] md:h-[600px] overflow-hidden">
+				{/* Background Image */}
 				{event.cover_image ? (
 					<DirectusImage
 						uuid={typeof event.cover_image === 'string' ? event.cover_image : event.cover_image.id}
 						alt={event.title}
 						fill
-						className="object-cover opacity-60"
+						className="object-cover"
 					/>
 				) : (
-					<div className="absolute inset-0 flex items-center justify-center">
+					<div className="absolute inset-0 bg-gradient-to-br from-purple-500 via-indigo-600 to-blue-600 flex items-center justify-center">
 						<Calendar className="size-32 text-white opacity-30" />
 					</div>
 				)}
 
-				{/* Overlay gradient */}
-				<div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+				{/* Enhanced Overlay with Multiple Layers */}
+				<div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+				<div className="absolute inset-0 bg-gradient-to-br from-purple-900/30 to-transparent" />
 
 				{/* Event Title */}
-				<div className="absolute bottom-0 inset-x-0 p-8">
-					<div className="max-w-7xl mx-auto">
-						{/* Category Badge */}
-						{eventCategory && (
-							<div className="mb-3">
+				<div className="absolute bottom-0 inset-x-0 p-6 md:p-12">
+					<div className="max-w-7xl mx-auto space-y-4">
+						{/* Badges Row */}
+						<div className="flex flex-wrap items-center gap-3">
+							{/* Category Badge */}
+							{eventCategory && (
 								<span
-									className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium text-white/90 bg-white/20 backdrop-blur-sm"
-									style={{ backgroundColor: eventCategory.color ? `${eventCategory.color}40` : undefined }}
+									className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-white bg-white/20 backdrop-blur-md border border-white/30 shadow-lg"
+									style={{ backgroundColor: eventCategory.color ? `${eventCategory.color}60` : undefined }}
 								>
 									{eventCategory.icon && <span className="text-lg">{eventCategory.icon}</span>}
 									{eventCategory.name}
 								</span>
-							</div>
-						)}
+							)}
 
-						<h1 className="text-4xl md:text-5xl font-bold text-white mb-4">{event.title}</h1>
-						<div className="flex flex-wrap gap-4 text-white/90">
-							<div className="flex items-center gap-2">
-								<Calendar className="size-5" />
-								<span className="font-medium">{formatDateRange()}</span>
+							{/* Event Type Badge */}
+							<span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-white bg-white/20 backdrop-blur-md border border-white/30 shadow-lg">
+								<Globe className="size-4" />
+								{event.event_type === 'in_person' ? 'Presencial' : event.event_type === 'online' ? 'Online' : 'Híbrido'}
+							</span>
+
+							{/* Free Badge */}
+							{event.is_free && (
+								<span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-white bg-gradient-to-r from-green-500 to-emerald-600 backdrop-blur-md border border-white/30 shadow-lg">
+									<DollarSign className="size-4" />
+									Gratuito
+								</span>
+							)}
+						</div>
+
+						{/* Title */}
+						<h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white leading-tight drop-shadow-2xl">
+							{event.title}
+						</h1>
+
+						{/* Date & Time */}
+						<div className="flex flex-wrap gap-4 md:gap-6">
+							<div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/20">
+								<Calendar className="size-5 md:size-6 text-white flex-shrink-0" />
+								<div>
+									<p className="text-xs text-white/70 font-medium">Data</p>
+									<p className="text-sm md:text-base font-bold text-white">{formatDateRange()}</p>
+								</div>
 							</div>
-							<div className="flex items-center gap-2">
-								<Clock className="size-5" />
-								<span className="font-medium capitalize">{formatTimeRange()}</span>
+							<div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/20">
+								<Clock className="size-5 md:size-6 text-white flex-shrink-0" />
+								<div>
+									<p className="text-xs text-white/70 font-medium">Horário</p>
+									<p className="text-sm md:text-base font-bold text-white capitalize">{formatTimeRange()}</p>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -175,8 +204,10 @@ return date.toLocaleTimeString('pt-BR', {
 					{/* Left Column - Event Details */}
 					<div className="lg:col-span-2 space-y-8">
 						{/* Description */}
-						<div className="bg-white rounded-2xl shadow-sm p-8">
-							<h2 className="text-2xl font-bold text-gray-900 mb-4">Sobre o evento</h2>
+						<div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl p-8 md:p-10 border border-gray-100 dark:border-gray-700">
+							<h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-6">
+								Sobre o evento
+							</h2>
 							{event.short_description && (
 								<p className="text-lg text-gray-700 mb-4 font-medium">{event.short_description}</p>
 							)}
@@ -207,10 +238,14 @@ return date.toLocaleTimeString('pt-BR', {
 
 						{/* Tickets Section - Only for paid events */}
 						{!event.is_free && (
-							<div className="bg-white rounded-2xl shadow-sm p-8">
-								<h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-									<Ticket className="size-6 text-purple-600" />
-									Ingressos
+							<div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl p-8 md:p-10 border border-gray-100 dark:border-gray-700">
+								<h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
+									<div className="p-2 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl">
+										<Ticket className="size-6 text-white" />
+									</div>
+									<span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+										Ingressos
+									</span>
 								</h2>
 
 								{hasTickets ? (

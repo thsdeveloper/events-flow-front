@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import TicketSelection, { EventTicket, TicketSelectionItem } from './TicketSelection';
+import TicketSelection, { TicketSelectionItem } from './TicketSelection';
+import type { EventTicket } from '@/types/directus-schema';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

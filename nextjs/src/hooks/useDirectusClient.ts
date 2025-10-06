@@ -1,24 +1,39 @@
-import { useMemo } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useMemo, useState, useEffect } from 'react';
 import { getAuthenticatedClient } from '@/lib/directus/directus';
 
 /**
  * Hook to get an authenticated Directus client
- * Uses the access token from AuthContext
+ *
+ * Note: This hook fetches a token from the server using httpOnly cookies.
+ * For new code, prefer using API routes for mutations instead of direct Directus access.
+ *
+ * @deprecated Consider using API routes for data mutations instead
  */
 export function useDirectusClient() {
-	const { getAccessToken } = useAuth();
-	const token = getAccessToken();
+	const [token, setToken] = useState<string | null>(null);
+
+	useEffect(() => {
+		// Get token from server via cookie-based authentication
+		fetch('/api/auth/token')
+			.then((res) => {
+				if (!res.ok) throw new Error('Failed to get token');
+
+				return res.json();
+			})
+			.then((data) => setToken(data.token))
+			.catch((err) => {
+				console.warn('No access token available:', err);
+				setToken(null);
+			});
+	}, []);
 
 	const client = useMemo(() => {
 		if (!token) {
-			console.warn('No access token available');
-			
-return null;
+
+			return null;
 		}
-		console.log('Creating Directus client with token:', token.substring(0, 20) + '...');
-		
-return getAuthenticatedClient(token);
+
+		return getAuthenticatedClient(token);
 	}, [token]);
 
 	return client;

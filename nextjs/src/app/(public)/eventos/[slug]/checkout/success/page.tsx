@@ -15,11 +15,11 @@ async function getCheckoutSession(sessionId: string) {
 }
 
 interface SuccessContentProps {
-  searchParams: { session_id?: string };
+  searchParams: Promise<{ session_id?: string }>;
 }
 
-function SuccessContent({ searchParams }: SuccessContentProps) {
-  const sessionId = searchParams.session_id;
+async function SuccessContent({ searchParams }: SuccessContentProps) {
+  const { session_id: sessionId } = await searchParams;
 
   if (!sessionId) {
     redirect('/eventos');
@@ -29,8 +29,8 @@ function SuccessContent({ searchParams }: SuccessContentProps) {
     <div className="min-h-screen flex items-center justify-center p-6">
       <Card className="max-w-2xl w-full">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-            <CheckCircle2 className="w-10 h-10 text-green-600" />
+          <div className="mx-auto mb-4 size-16 bg-green-100 rounded-full flex items-center justify-center">
+            <CheckCircle2 className="size-10 text-green-600" />
           </div>
           <CardTitle className="text-2xl">Pagamento Confirmado!</CardTitle>
           <CardDescription>
@@ -40,7 +40,7 @@ function SuccessContent({ searchParams }: SuccessContentProps) {
         <CardContent className="space-y-6">
           <div className="bg-muted rounded-lg p-6 space-y-4">
             <div className="flex items-start gap-3">
-              <Mail className="w-5 h-5 text-muted-foreground mt-0.5" />
+              <Mail className="size-5 text-muted-foreground mt-0.5" />
               <div>
                 <h3 className="font-medium mb-1">Verifique seu e-mail</h3>
                 <p className="text-sm text-muted-foreground">
@@ -51,7 +51,7 @@ function SuccessContent({ searchParams }: SuccessContentProps) {
             </div>
 
             <div className="flex items-start gap-3">
-              <Download className="w-5 h-5 text-muted-foreground mt-0.5" />
+              <Download className="size-5 text-muted-foreground mt-0.5" />
               <div>
                 <h3 className="font-medium mb-1">Baixe seus ingressos</h3>
                 <p className="text-sm text-muted-foreground">
@@ -85,7 +85,7 @@ function SuccessContent({ searchParams }: SuccessContentProps) {
 export default function CheckoutSuccessPage({
   searchParams,
 }: {
-  searchParams: { session_id?: string };
+  searchParams: Promise<{ session_id?: string }>;
 }) {
   return (
     <Suspense fallback={<div>Carregando...</div>}>
