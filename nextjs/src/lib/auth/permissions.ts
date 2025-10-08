@@ -26,6 +26,7 @@ export async function checkIfUserIsOrganizer(
 ): Promise<{
 	isOrganizer: boolean;
 	organizerProfile: OrganizerProfile | null;
+	hasPendingRequest: boolean;
 }> {
 	try {
 		const organizers = await client.request(
@@ -54,23 +55,22 @@ export async function checkIfUserIsOrganizer(
 			})
 		);
 
-		if (organizers.length > 0) {
-			return {
-				isOrganizer: true,
-				organizerProfile: organizers[0] as unknown as OrganizerProfile,
-			};
-		}
+		const activeProfile = organizers.find((item: any) => item.status === 'active') ?? null;
+		const pendingProfile = organizers.find((item: any) => item.status === 'pending') ?? null;
+		const profileToReturn = (activeProfile || pendingProfile) as OrganizerProfile | null;
 
 		return {
-			isOrganizer: false,
-			organizerProfile: null,
+			isOrganizer: Boolean(activeProfile),
+			organizerProfile: profileToReturn,
+			hasPendingRequest: !activeProfile && Boolean(pendingProfile),
 		};
 	} catch (error) {
 		console.error('Error checking organizer status:', error);
 		
-return {
+		return {
 			isOrganizer: false,
 			organizerProfile: null,
+			hasPendingRequest: false,
 		};
 	}
 }

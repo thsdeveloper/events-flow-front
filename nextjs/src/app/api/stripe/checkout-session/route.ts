@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe, formatAmountForStripe } from '@/lib/stripe/server';
-import { createDirectus, rest, readItems, createItem, updateItem, staticToken } from '@directus/sdk';
+import { createDirectus, rest, staticToken, readItems, createItem, updateItem, readItem } from '@directus/sdk';
 import type { Schema } from '@/types/directus-schema';
 import { calculateFees, type FeeConfig } from '@/lib/fees';
+import { getServerAuth, getAuthenticatedServerClient } from '@/lib/auth/server-auth';
 
 const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL || 'http://localhost:8055';
 
@@ -18,11 +19,23 @@ interface CheckoutSessionRequest {
     phone?: string;
     document?: string;
   };
-  userId?: string;
+  // userId não é mais enviado pelo cliente - vem da sessão autenticada
 }
 
 export async function POST(request: NextRequest) {
   try {
+    // 1. Verificar autenticação PRIMEIRO
+    const auth = await getServerAuth();
+
+    if (!auth) {
+      return NextResponse.json(
+        { error: 'Você precisa estar logado para realizar uma compra.' },
+        { status: 401 }
+      );
+    }
+
+    console.log(`[Checkout] Usuário autenticado: ${auth.user.email} (ID: ${auth.user.id})`);
+
     const body: CheckoutSessionRequest = await request.json();
 
     // Validar dados básicos
@@ -33,15 +46,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Criar instância autenticada do Directus para esta requisição
-    const formToken = process.env.DIRECTUS_FORM_TOKEN;
-    if (!formToken) {
-      throw new Error('DIRECTUS_FORM_TOKEN não configurado');
-    }
-
-    const directus = createDirectus<Schema>(directusUrl)
-      .with(rest())
-      .with(staticToken(formToken));
+    // 2. Usar cliente autenticado com o token do usuário
+    const directus = await getAuthenticatedServerClient();
 
     // Buscar dados do evento com relacionamentos
     const events = await directus.request(
@@ -81,11 +87,44 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Evento não encontrado.' }, { status: 404 });
     }
 
-    // Verificar se organizador tem Stripe configurado
-    const organizer = event.organizer_id;
+    // Buscar organizador com admin token para acessar campos stripe_*
+    // (usuários comuns não têm permissão para ler esses campos sensíveis)
+    const adminToken = process.env.DIRECTUS_ADMIN_TOKEN;
+    if (!adminToken) {
+      throw new Error('DIRECTUS_ADMIN_TOKEN não configurado');
+    }
+
+    const adminClient = createDirectus<Schema>(directusUrl)
+      .with(rest())
+      .with(staticToken(adminToken));
+
+    const organizerId = typeof event.organizer_id === 'string'
+      ? event.organizer_id
+      : event.organizer_id?.id;
+
+    if (!organizerId) {
+      return NextResponse.json({ error: 'Evento sem organizador configurado.' }, { status: 400 });
+    }
+
+    const organizer = await adminClient.request(
+      readItem('organizers', organizerId, {
+        fields: [
+          'id',
+          'stripe_account_id',
+          'stripe_charges_enabled',
+          'stripe_onboarding_complete',
+        ],
+      })
+    );
+
+    console.log('[Checkout] Organizer validation:', {
+      organizerId: organizer.id,
+      hasStripeAccount: !!organizer.stripe_account_id,
+      chargesEnabled: organizer.stripe_charges_enabled,
+      onboardingComplete: organizer.stripe_onboarding_complete,
+    });
 
     if (
-      !organizer ||
       !organizer.stripe_account_id ||
       !organizer.stripe_charges_enabled ||
       !organizer.stripe_onboarding_complete
@@ -96,16 +135,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Buscar configuração de taxas
-    const configurations = await directus.request(readItems('event_configurations' as any));
-    const config = configurations[0];
+    // Buscar configuração de taxas com admin token
+    console.log('[Checkout] Fetching event_configurations...');
+    let config: any;
 
-    if (!config) {
-      return NextResponse.json(
-        { error: 'Configuração de taxas não encontrada.' },
-        { status: 500 }
+    try {
+      const configurations = await adminClient.request(
+        readItems('event_configurations' as any, {
+          fields: ['platform_fee_percentage', 'stripe_percentage_fee', 'stripe_fixed_fee'],
+          limit: 1,
+        })
       );
+      console.log('[Checkout] Configurations response:', configurations);
+      config = Array.isArray(configurations) ? configurations[0] : configurations;
+
+      if (!config) {
+        console.warn('[Checkout] No configuration found in database');
+      }
+    } catch (configError) {
+      console.error('[Checkout] Error fetching config:', configError);
+      // Use default values if config fetch fails
+      config = null;
     }
+
+    // Use default values if no config found
+    if (!config) {
+      console.warn('[Checkout] Using default fee configuration (fallback)');
+      config = {
+        platform_fee_percentage: 1.99,
+        stripe_percentage_fee: 4.35,
+        stripe_fixed_fee: 0.39,
+      };
+    }
+
+    console.log('[Checkout] Final config:', {
+      platform_fee_percentage: config.platform_fee_percentage,
+      stripe_percentage_fee: config.stripe_percentage_fee,
+      stripe_fixed_fee: config.stripe_fixed_fee,
+    });
 
     const feeConfig: FeeConfig = {
       platformFeePercentage: Number(config.platform_fee_percentage || 5),
@@ -225,26 +292,47 @@ export async function POST(request: NextRequest) {
     const createdRegistrations = [];
 
     for (const ticketData of registrationTickets) {
-      const registration = await directus.request(
-        createItem('event_registrations', {
-          event_id: body.eventId,
-          ticket_type_id: ticketData.ticket_type_id,
-          participant_name: body.participantInfo.name,
-          participant_email: body.participantInfo.email,
-          participant_phone: body.participantInfo.phone || null,
-          participant_document: body.participantInfo.document || null,
-          user_id: body.userId || null,
-          payment_status: 'pending',
-          status: 'pending',
-          payment_amount: ticketData.total_amount * ticketData.quantity,
-          quantity: ticketData.quantity,
-          unit_price: ticketData.unit_price,
-          service_fee: ticketData.convenience_fee,
-          total_amount: ticketData.total_amount * ticketData.quantity,
-          payment_method: 'card',
-        })
-      );
-      createdRegistrations.push(registration);
+      console.log('[Checkout] Criando registration:', {
+        event_id: body.eventId,
+        ticket_type_id: ticketData.ticket_type_id,
+        user_id: auth.user.id,
+        quantity: ticketData.quantity,
+      });
+
+      try {
+        const registration = await directus.request(
+          createItem('event_registrations', {
+            event_id: body.eventId,
+            ticket_type_id: ticketData.ticket_type_id,
+            participant_name: body.participantInfo.name,
+            participant_email: body.participantInfo.email,
+            participant_phone: body.participantInfo.phone || null,
+            participant_document: body.participantInfo.document || null,
+            user_id: auth.user.id, // ← Usar ID do usuário autenticado (mais seguro)
+            payment_status: 'pending',
+            status: 'pending',
+            payment_amount: ticketData.total_amount * ticketData.quantity,
+            quantity: ticketData.quantity,
+            unit_price: ticketData.unit_price,
+            service_fee: ticketData.convenience_fee,
+            total_amount: ticketData.total_amount * ticketData.quantity,
+            payment_method: 'card',
+          })
+        );
+
+        console.log('[Checkout] Registration retornado do Directus:', JSON.stringify(registration, null, 2));
+        console.log('[Checkout] Tipo de registration:', typeof registration);
+        console.log('[Checkout] registration.id:', registration?.id);
+
+        if (!registration || !registration.id) {
+          throw new Error('Falha ao criar registration - sem permissão ou resposta inválida do Directus');
+        }
+
+        createdRegistrations.push(registration);
+      } catch (regError) {
+        console.error('[Checkout] Erro ao criar registration:', regError);
+        throw new Error(`Erro ao criar ingresso: ${regError instanceof Error ? regError.message : 'Verifique as permissões no Directus'}`);
+      }
     }
 
     // Criar Checkout Session no Stripe

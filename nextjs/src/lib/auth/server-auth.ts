@@ -12,6 +12,7 @@ import { redirect } from 'next/navigation';
 import { readMe } from '@directus/sdk';
 import { getAuthenticatedClient } from '@/lib/directus/directus';
 import { checkIfUserIsOrganizer } from './permissions';
+import { isOrganizerRole } from './roles';
 import type { Schema } from '@/types/directus-schema';
 
 /**
@@ -57,6 +58,8 @@ export type AuthState = {
 	user: AuthUser;
 	isOrganizer: boolean;
 	organizerProfile?: OrganizerProfile;
+	organizerStatus?: OrganizerProfile['status'];
+	hasPendingOrganizerRequest?: boolean;
 };
 
 /**
@@ -100,13 +103,19 @@ export async function getServerAuth(): Promise<AuthState | null> {
 		// Type assertion for proper typing
 		const user = userData as unknown as AuthUser;
 
-		// Check if user is an organizer
-		const { isOrganizer, organizerProfile } = await checkIfUserIsOrganizer(client, user.id);
+		const hasOrganizerRole = isOrganizerRole(user.role);
+
+		// Check organizer profile to show pending requests for all users
+		const { organizerProfile, hasPendingRequest } = await checkIfUserIsOrganizer(client, user.id);
+		const organizerStatus = organizerProfile?.status;
+		const hasPendingOrganizerRequest = !hasOrganizerRole && (organizerStatus === 'pending' || hasPendingRequest);
 
 		return {
 			user,
-			isOrganizer,
+			isOrganizer: hasOrganizerRole,
 			organizerProfile: organizerProfile || undefined,
+			organizerStatus,
+			hasPendingOrganizerRequest,
 		};
 	} catch (error) {
 		console.error('Server auth error:', error);

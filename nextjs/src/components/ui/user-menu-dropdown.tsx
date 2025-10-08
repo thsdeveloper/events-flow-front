@@ -1,8 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useState } from 'react';
-import { User, Heart, Calendar, CalendarCheck, HelpCircle, LogOut, LogIn, Ticket } from 'lucide-react';
+import { User, Heart, HelpCircle, LogOut, LogIn, Ticket, Moon, Sun } from 'lucide-react';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -11,13 +10,15 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { AuthModal } from '@/components/ui/auth-modal';
+import { Switch } from '@/components/ui/switch';
 import { useServerAuth } from '@/hooks/useServerAuth';
+import { useTheme } from 'next-themes';
 import Link from 'next/link';
 
 export function UserMenuDropdown() {
 	const { user, logout, isLoading } = useServerAuth();
-	const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+	const { theme, setTheme, resolvedTheme } = useTheme();
+	const isDark = theme === 'dark' || resolvedTheme === 'dark';
 
 	if (isLoading) {
 		return (
@@ -27,18 +28,17 @@ export function UserMenuDropdown() {
 
 	if (!user) {
 		return (
-			<>
-				<Button
-					variant="default"
-					size="sm"
-					onClick={() => setIsAuthModalOpen(true)}
-					className="font-semibold gap-2 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105"
-				>
+			<Button
+				variant="default"
+				size="sm"
+				asChild
+				className="font-semibold gap-2 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105"
+			>
+				<Link href="/login">
 					<LogIn className="size-4" />
 					Entrar
-				</Button>
-				<AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-			</>
+				</Link>
+			</Button>
 		);
 	}
 
@@ -82,17 +82,18 @@ export function UserMenuDropdown() {
 					</Link>
 				</DropdownMenuItem>
 				<DropdownMenuSeparator />
-				<DropdownMenuItem asChild>
-					<Link href="/admin/eventos/novo" className="cursor-pointer">
-						<Calendar className="mr-2 size-4" />
-						<span>Criar evento</span>
-					</Link>
-				</DropdownMenuItem>
-				<DropdownMenuItem asChild>
-					<Link href="/admin/eventos" className="cursor-pointer">
-						<CalendarCheck className="mr-2 size-4" />
-						<span>Meus eventos</span>
-					</Link>
+				<DropdownMenuItem
+					className="cursor-pointer flex items-center justify-between"
+					onSelect={(e) => {
+						e.preventDefault();
+						setTheme(isDark ? 'light' : 'dark');
+					}}
+				>
+					<div className="flex items-center">
+						{isDark ? <Moon className="mr-2 size-4" /> : <Sun className="mr-2 size-4" />}
+						<span>Modo escuro</span>
+					</div>
+					<Switch checked={isDark} onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')} />
 				</DropdownMenuItem>
 				<DropdownMenuSeparator />
 				<DropdownMenuItem asChild>

@@ -1,0 +1,664 @@
+[
+  {
+    "id": "TC001",
+    "title": "User Registration Success",
+    "description": "Verify that a new user can register successfully with valid details and receive proper JWT tokens.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the registration page"
+      },
+      {
+        "type": "action",
+        "description": "Fill in valid registration details: username, email, password"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify registration success response and that JWT token is returned and stored securely"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is redirected to the authenticated home/dashboard page"
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "User Login Success",
+    "description": "Verify that a registered user can log in successfully with correct credentials and receive JWT tokens.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page"
+      },
+      {
+        "type": "action",
+        "description": "Input valid email and password credentials"
+      },
+      {
+        "type": "action",
+        "description": "Click on the login button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify successful login and receipt of JWT access and refresh tokens"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is redirected to their dashboard"
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "User Login Failure with Invalid Credentials",
+    "description": "Verify that login with incorrect email or password fails gracefully with proper error messages.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page"
+      },
+      {
+        "type": "action",
+        "description": "Input invalid email or incorrect password"
+      },
+      {
+        "type": "action",
+        "description": "Click on the login button"
+      },
+      {
+        "type": "assertion",
+        "description": "Check for an error message indicating invalid credentials"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that no JWT tokens are issued"
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Password Reset Flow",
+    "description": "Verify that a user can request a password reset and successfully reset the password using emailed token link.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to password reset request page"
+      },
+      {
+        "type": "action",
+        "description": "Input registered email and submit reset request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that password reset email is sent"
+      },
+      {
+        "type": "action",
+        "description": "Click the reset link received via email"
+      },
+      {
+        "type": "action",
+        "description": "Input new valid password and confirm"
+      },
+      {
+        "type": "action",
+        "description": "Submit the password reset form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify password is updated and user can log in with the new password"
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Token Refresh Functionality",
+    "description": "Verify that JWT token refresh API correctly issues new access tokens when a valid refresh token is used.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Authenticate and obtain access and refresh tokens"
+      },
+      {
+        "type": "action",
+        "description": "Simulate expiry of access token"
+      },
+      {
+        "type": "action",
+        "description": "Call the token refresh endpoint with the valid refresh token"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify new access token is issued and is valid"
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Event Creation by Organizer",
+    "description": "Verify that an authenticated organizer can successfully create a new event with all mandatory details including images and ticket types.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as organizer user"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to event creation page"
+      },
+      {
+        "type": "action",
+        "description": "Input event details including name, description, start/end dates, venue"
+      },
+      {
+        "type": "action",
+        "description": "Add multiple ticket types with inventory, prices, and descriptions"
+      },
+      {
+        "type": "action",
+        "description": "Upload event images"
+      },
+      {
+        "type": "action",
+        "description": "Submit event creation form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify event is created and visible in organizer's event list"
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Event Editing and Deletion by Organizer",
+    "description": "Verify that an organizer can edit and delete events they own and all changes are persisted correctly.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as organizer and select an existing event"
+      },
+      {
+        "type": "action",
+        "description": "Modify event details such as date, description, or ticket types"
+      },
+      {
+        "type": "action",
+        "description": "Save the changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify event details are updated correctly"
+      },
+      {
+        "type": "action",
+        "description": "Delete the event"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify event no longer appears in the event list and database"
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Ticket Inventory Updates",
+    "description": "Verify that ticket inventory counts update accurately upon ticket purchase and manual adjustments by organizer.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Create event with fixed number of tickets"
+      },
+      {
+        "type": "action",
+        "description": "Purchase tickets as a user for a specific ticket type"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify ticket inventory count decreases accordingly"
+      },
+      {
+        "type": "action",
+        "description": "Log in as organizer and manually adjust ticket inventory count"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify ticket inventory count reflects manual updates"
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Stripe Checkout Payment Success",
+    "description": "Verify the complete Stripe payment process including creating checkout sessions, successful payment, and webhook processing.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Select tickets on public event page and proceed to checkout"
+      },
+      {
+        "type": "action",
+        "description": "Fill in required payment details in Stripe hosted checkout"
+      },
+      {
+        "type": "action",
+        "description": "Complete payment successfully"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify webhook is received and ticket sale is recorded"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify organizer revenue, fees, and payouts are correctly calculated"
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Stripe Checkout Payment Failure and Cancel Handling",
+    "description": "Verify that payment failures and user checkout cancellations are handled correctly with appropriate user feedback.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Start Stripe checkout flow for ticket purchase"
+      },
+      {
+        "type": "action",
+        "description": "Simulate a failed payment or user cancellation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is redirected to failure or cancel page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify no ticket inventory is deducted"
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "User Dashboard Access and Ticket Management",
+    "description": "Verify authenticated users can access their personal dashboard to view, download, and manage their purchased tickets and registrations.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as an attendee user"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to personal dashboard page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify list of purchased tickets and event registrations is displayed accurately"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to download or view ticket details"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify tickets open/download successfully"
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Organizer Dashboard Functionality",
+    "description": "Verify organizer dashboard shows statistics, event listings, Stripe account connection status, and profile management capabilities.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as organizer"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to organizer dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify event listings with correct statuses are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify event statistics are accurate"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify Stripe onboarding and payout status are shown"
+      },
+      {
+        "type": "action",
+        "description": "Update organizer profile and logo"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify organizer profile updates are saved and displayed"
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Public Event Browsing and Dynamic Routing",
+    "description": "Verify that public users can browse events, access detail pages using dynamic routes, and ticket purchase flow initiates correctly.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to public event listing page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify events are listed with correct summary information"
+      },
+      {
+        "type": "action",
+        "description": "Click on a specific event to access detail page via dynamic URL"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify event details render correctly including tickets and images"
+      },
+      {
+        "type": "action",
+        "description": "Proceed to ticket selection and purchase checkout"
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Directus CMS Block-Based Page Builder Functionality",
+    "description": "Verify that editing pages using the Directus block-based page builder with hero, rich text, gallery, forms, and other blocks updates pages dynamically with live preview.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as content author in CMS"
+      },
+      {
+        "type": "action",
+        "description": "Open block-based page builder and insert various blocks"
+      },
+      {
+        "type": "action",
+        "description": "Edit content of blocks and save changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify live preview reflects changes instantly"
+      },
+      {
+        "type": "action",
+        "description": "Use visual editing support to modify blocks"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify visual changes persist and pages render updated content correctly"
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Dynamic Forms Validation and File Upload",
+    "description": "Verify dynamic forms built with various field types validate inputs correctly using Zod and support file uploads integrated with Directus file system.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to a page with a dynamic form"
+      },
+      {
+        "type": "action",
+        "description": "Fill out text, select, checkbox, and radio fields with valid and invalid inputs to test validation"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to upload various file types within allowed size limits"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify validation errors appear for invalid inputs"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify files are uploaded successfully and linked in form submission"
+      },
+      {
+        "type": "action",
+        "description": "Submit the valid form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify successful form submission and data persistence"
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Blog Post Creation and Draft Preview",
+    "description": "Verify blog system supports blog post creation, draft saving, live preview of unpublished drafts, and proper published rendering.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as blog content author"
+      },
+      {
+        "type": "action",
+        "description": "Create a new blog post and save as draft"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify draft preview is available and displays accurate content"
+      },
+      {
+        "type": "action",
+        "description": "Publish the blog post"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify public blog post page renders correctly with rich content"
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Responsive UI Components and Theme Toggle",
+    "description": "Verify UI components render responsively across device sizes and that dark/light mode toggle functions correctly with persistence.",
+    "category": "ui",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Load key UI pages on desktop, tablet, and mobile screen sizes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify UI elements adapt appropriately to screen size without layout issues"
+      },
+      {
+        "type": "action",
+        "description": "Toggle theme from light to dark mode and back"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify theme changes are applied instantly and persist on page reload"
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "Site Wide Search Functionality",
+    "description": "Verify the search modal and API return relevant results across events, blog posts, and other site content swiftly and accurately.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the search modal on any page"
+      },
+      {
+        "type": "action",
+        "description": "Enter various search terms including partial and case-insensitive queries"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify search results are returned quickly"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify results include relevant events, blog posts, and other content matching the query"
+      }
+    ]
+  },
+  {
+    "id": "TC019",
+    "title": "Admin Dashboard Event and Ticket Management",
+    "description": "Verify that admin users can manage all system-wide events, configure ticket settings, and upload media via the admin dashboard UI without errors.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as admin user"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to admin dashboard and event management sections"
+      },
+      {
+        "type": "action",
+        "description": "Create, edit, and delete system-wide events and tickets"
+      },
+      {
+        "type": "action",
+        "description": "Upload images and media assets via admin interface"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify changes persist and are reflected in public site as expected"
+      }
+    ]
+  },
+  {
+    "id": "TC020",
+    "title": "Security - Protected Routes and CSRF Protection",
+    "description": "Verify that sensitive routes are protected requiring proper authentication and that CSRF protection is enforced on state-changing requests.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to access protected route without authentication"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is denied and user is redirected to login"
+      },
+      {
+        "type": "action",
+        "description": "Login and access protected route"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is granted"
+      },
+      {
+        "type": "action",
+        "description": "Submit a state-changing request without valid CSRF token"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify request is rejected with CSRF error"
+      }
+    ]
+  },
+  {
+    "id": "TC021",
+    "title": "File Upload Error Handling",
+    "description": "Verify that file uploads reject unsupported file types, excessive file sizes, and handle network interruptions gracefully in both user and admin interfaces.",
+    "category": "error handling",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to upload unsupported file type"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify rejection message and no file is uploaded"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to upload file exceeding size limit"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify rejection with appropriate error notification"
+      },
+      {
+        "type": "action",
+        "description": "Simulate network interruption during file upload"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify error is reported and partial uploads are cleaned up"
+      }
+    ]
+  },
+  {
+    "id": "TC022",
+    "title": "Redirects Management",
+    "description": "Verify that dynamic redirects configured through Directus are enforced correctly on the public site for all specified routes.",
+    "category": "functional",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Configure a redirect rule in Directus"
+      },
+      {
+        "type": "action",
+        "description": "Visit the URL specified for redirect"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is redirected to the correct destination URL"
+      }
+    ]
+  }
+]

@@ -1,0 +1,264 @@
+{
+  "tech_stack": [
+    "TypeScript",
+    "Next.js 15",
+    "React 19",
+    "Tailwind CSS",
+    "Directus CMS",
+    "PostgreSQL",
+    "Stripe",
+    "Radix UI",
+    "React Hook Form",
+    "Zod",
+    "Shadcn UI"
+  ],
+  "features": [
+    {
+      "name": "Dynamic Page Builder",
+      "description": "Block-based page builder system that dynamically renders pages from Directus CMS with composable blocks (hero, richtext, gallery, pricing, posts, forms)",
+      "files": [
+        "src/components/layout/PageBuilder.tsx",
+        "src/components/blocks/BaseBlock.tsx",
+        "src/components/blocks/Hero.tsx",
+        "src/components/blocks/RichText.tsx",
+        "src/components/blocks/Gallery.tsx",
+        "src/components/blocks/Pricing.tsx",
+        "src/components/blocks/Posts.tsx",
+        "src/components/blocks/Form.tsx",
+        "src/components/blocks/Events.tsx",
+        "src/app/(public)/[[...permalink]]/page.tsx"
+      ]
+    },
+    {
+      "name": "Authentication System",
+      "description": "Complete authentication system with login, register, password reset, JWT token management, and protected routes with role-based access control",
+      "files": [
+        "src/app/api/auth/login/route.ts",
+        "src/app/api/auth/register/route.ts",
+        "src/app/api/auth/logout/route.ts",
+        "src/app/api/auth/refresh/route.ts",
+        "src/app/api/auth/me/route.ts",
+        "src/app/api/auth/token/route.ts",
+        "src/app/api/auth/password/request/route.ts",
+        "src/app/api/auth/password/reset/route.ts",
+        "src/lib/auth/server-auth.ts",
+        "src/lib/auth/cookies.ts",
+        "src/lib/auth/permissions.ts",
+        "src/contexts/AuthContext.tsx",
+        "src/components/auth/ProtectedRoute.tsx",
+        "src/middleware.ts",
+        "src/hooks/useServerAuth.ts"
+      ]
+    },
+    {
+      "name": "Event Management System",
+      "description": "Complete event management platform with event creation, editing, ticket sales, attendee tracking, and event configuration for event organizers",
+      "files": [
+        "src/app/admin/eventos/page.tsx",
+        "src/app/admin/eventos/novo/page.tsx",
+        "src/app/admin/eventos/[evento_id]/page.tsx",
+        "src/app/admin/eventos/[evento_id]/editar/page.tsx",
+        "src/app/admin/eventos/[evento_id]/configuracoes/page.tsx",
+        "src/app/admin/eventos/[evento_id]/participantes/page.tsx",
+        "src/app/admin/eventos/[evento_id]/inscricoes/page.tsx",
+        "src/app/api/event-config/route.ts",
+        "src/components/events/EventCheckout.tsx",
+        "src/components/events/TicketSelection.tsx",
+        "src/app/(public)/eventos/[slug]/page.tsx"
+      ]
+    },
+    {
+      "name": "Stripe Payment Integration",
+      "description": "Complete Stripe integration for ticket purchases with checkout sessions, payment processing, and organizer onboarding with Stripe Connect",
+      "files": [
+        "src/app/api/stripe/checkout-session/route.ts",
+        "src/app/api/organizer/stripe/onboarding/route.ts",
+        "src/lib/stripe/server.ts",
+        "src/lib/stripe/client.ts",
+        "src/lib/stripe/webhooks.ts",
+        "src/lib/fees.ts",
+        "src/components/organizer/StripeOnboardingButton.tsx",
+        "src/components/organizer/StripeStatusCard.tsx",
+        "src/hooks/useCheckout.ts",
+        "src/app/(public)/eventos/[slug]/checkout/page.tsx",
+        "src/app/(public)/eventos/[slug]/checkout/success/page.tsx",
+        "src/app/(public)/eventos/[slug]/checkout/cancel/page.tsx"
+      ]
+    },
+    {
+      "name": "Ticket Management",
+      "description": "Ticket purchasing, viewing, and management system for users to buy and view their tickets for events",
+      "files": [
+        "src/components/tickets/MyTickets.tsx",
+        "src/app/(public)/meus-ingressos/page.tsx",
+        "src/components/admin/TicketFormModal.tsx",
+        "src/components/admin/TicketManagementModal.tsx"
+      ]
+    },
+    {
+      "name": "Organizer Dashboard",
+      "description": "Dashboard and management interface for event organizers with stats, profile management, and event administration",
+      "files": [
+        "src/app/admin/dashboard/page.tsx",
+        "src/app/admin/configuracoes/page.tsx",
+        "src/app/admin/layout.tsx",
+        "src/components/admin/AdminHeader.tsx",
+        "src/components/admin/AdminSidebar.tsx",
+        "src/components/organizer/OrganizerNavigation.tsx",
+        "src/app/api/organizer/stats/route.ts",
+        "src/app/api/organizer/profile/route.ts",
+        "src/app/api/organizer/logo/route.ts",
+        "src/hooks/useOrganizer.ts"
+      ]
+    },
+    {
+      "name": "User Profile Management",
+      "description": "User and organizer profile management with profile editing, password changes, and account settings",
+      "files": [
+        "src/app/(public)/perfil/page.tsx",
+        "src/components/account/AccountPageContent.tsx",
+        "src/components/account/UserProfileForm.tsx",
+        "src/components/account/OrganizerProfileForm.tsx",
+        "src/app/api/user/profile/route.ts",
+        "src/app/api/user/password/route.ts"
+      ]
+    },
+    {
+      "name": "Directus CMS Integration",
+      "description": "Deep integration with Directus headless CMS including data fetching, type generation, rate limiting, and form handling",
+      "files": [
+        "src/lib/directus/directus.ts",
+        "src/lib/directus/fetchers.ts",
+        "src/lib/directus/forms.ts",
+        "src/lib/directus/directus-utils.ts",
+        "src/lib/directus/generateDirectusTypes.ts",
+        "src/hooks/useDirectusClient.ts",
+        "src/types/directus-schema.ts"
+      ]
+    },
+    {
+      "name": "Dynamic Forms System",
+      "description": "Dynamic form generation and validation system that creates forms based on Directus schema with Zod validation",
+      "files": [
+        "src/components/forms/DynamicForm.tsx",
+        "src/components/forms/FormBuilder.tsx",
+        "src/components/forms/FormField.tsx",
+        "src/components/forms/fields/CheckboxField.tsx",
+        "src/components/forms/fields/CheckboxGroupField.tsx",
+        "src/components/forms/fields/RadioGroupField.tsx",
+        "src/components/forms/fields/SelectField.tsx",
+        "src/components/forms/fields/FileUploadField.tsx",
+        "src/lib/zodSchemaBuilder.ts"
+      ]
+    },
+    {
+      "name": "Blog System",
+      "description": "Blog functionality with post listings and individual post pages with SEO optimization",
+      "files": [
+        "src/app/(public)/blog/page.tsx",
+        "src/app/(public)/blog/[slug]/page.tsx",
+        "src/components/blocks/Posts.tsx"
+      ]
+    },
+    {
+      "name": "Visual Editing Integration",
+      "description": "Directus Live Preview and visual editing integration for content editors to preview changes in real-time",
+      "files": [
+        "src/components/layout/VisualEditingLayout.tsx",
+        "src/hooks/useVisualEditing.ts",
+        "src/app/api/draft/route.ts"
+      ]
+    },
+    {
+      "name": "Navigation System",
+      "description": "Dynamic navigation with header, footer, and mobile-responsive navigation menus generated from Directus",
+      "files": [
+        "src/components/layout/NavigationBar.tsx",
+        "src/components/layout/Footer.tsx",
+        "src/components/ui/navigation-menu.tsx"
+      ]
+    },
+    {
+      "name": "Search Functionality",
+      "description": "Site-wide search functionality for finding content across the application",
+      "files": [
+        "src/app/api/search/route.ts",
+        "src/components/ui/SearchModal.tsx"
+      ]
+    },
+    {
+      "name": "Image Upload & Management",
+      "description": "Image upload functionality with Directus files integration for managing event images and logos",
+      "files": [
+        "src/app/api/upload/route.ts",
+        "src/components/admin/ImageUpload.tsx",
+        "src/components/shared/DirectusImage.tsx"
+      ]
+    },
+    {
+      "name": "Theme System",
+      "description": "Dark/light theme support with theme persistence and toggle functionality",
+      "files": [
+        "src/components/ui/ThemeProvider.tsx",
+        "src/components/ui/ThemeToggle.tsx"
+      ]
+    },
+    {
+      "name": "UI Component Library",
+      "description": "Comprehensive UI component library built with Radix UI primitives and Tailwind CSS for consistent design",
+      "files": [
+        "src/components/ui/button.tsx",
+        "src/components/ui/card.tsx",
+        "src/components/ui/dialog.tsx",
+        "src/components/ui/input.tsx",
+        "src/components/ui/form.tsx",
+        "src/components/ui/dropdown-menu.tsx",
+        "src/components/ui/badge.tsx",
+        "src/components/ui/alert.tsx",
+        "src/components/ui/checkbox.tsx",
+        "src/components/ui/radio-group.tsx",
+        "src/components/ui/label.tsx",
+        "src/components/ui/auth-modal.tsx",
+        "src/components/ui/user-menu-dropdown.tsx",
+        "src/components/ui/ShareDialog.tsx",
+        "src/components/ui/pagination.tsx",
+        "src/components/ui/collapsible.tsx",
+        "src/components/ui/command.tsx",
+        "src/components/ui/container.tsx",
+        "src/components/ui/Headline.tsx",
+        "src/components/ui/Text.tsx",
+        "src/components/ui/Tagline.tsx"
+      ]
+    },
+    {
+      "name": "SEO & Metadata",
+      "description": "SEO optimization with dynamic sitemap generation and metadata management",
+      "files": [
+        "src/app/sitemap.ts"
+      ]
+    },
+    {
+      "name": "Redirects Management",
+      "description": "Dynamic redirect management system for handling URL redirects configured in Directus",
+      "files": [
+        "src/lib/redirects.ts"
+      ]
+    },
+    {
+      "name": "Middleware & Route Protection",
+      "description": "Next.js middleware for authentication, authorization, and route protection with role-based access",
+      "files": [
+        "src/middleware.ts",
+        "src/lib/auth/permissions.ts"
+      ]
+    },
+    {
+      "name": "Toast Notifications",
+      "description": "Toast notification system for user feedback and error messages",
+      "files": [
+        "src/hooks/use-toast.ts",
+        "src/components/ui/toast.tsx"
+      ]
+    }
+  ]
+}

@@ -61,6 +61,9 @@ export default function TicketFormModal({
 					`${directusUrl}/items/event_configurations?limit=1&fields=platform_fee_percentage,stripe_percentage_fee,stripe_fixed_fee`,
 					{
 						cache: 'no-store', // Force fresh data
+						headers: {
+							'Content-Type': 'application/json',
+						},
 					}
 				);
 

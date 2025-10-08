@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readMe, readItems } from '@directus/sdk';
+import { readMe } from '@directus/sdk';
 import { getAuthClient } from '@/lib/directus/directus';
 import { setAuthCookies } from '@/lib/auth/cookies';
+import { isOrganizerRole } from '@/lib/auth/roles';
 
 export async function POST(request: NextRequest) {
 	try {
@@ -35,20 +36,11 @@ export async function POST(request: NextRequest) {
 			})
 		);
 
-		// Check if user is an organizer
-		const organizers = await client.request(
-			readItems('organizers', {
-				filter: {
-					user_id: { _eq: userData.id },
-					status: { _in: ['active', 'pending'] },
-				},
-				limit: 1,
-			})
+		const hasOrganizerRole = isOrganizerRole(
+			typeof userData.role === 'string' ? { id: userData.role, name: '' } : userData.role
 		);
 
-		const isOrganizer = organizers.length > 0;
-
-		// Determine redirect URL based on role
+		const isOrganizer = hasOrganizerRole;
 		const redirectUrl = isOrganizer ? '/admin' : '/perfil';
 
 		// ⭐ Validate tokens

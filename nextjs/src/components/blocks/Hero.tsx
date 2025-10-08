@@ -42,13 +42,13 @@ export default function Hero({ data }: HeroProps) {
 
 			{/* Animated Background Elements */}
 			<div className="absolute inset-0 -z-10 overflow-hidden">
-				<div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300/30 dark:bg-purple-500/10 rounded-full blur-3xl animate-pulse" />
-				<div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-300/30 dark:bg-indigo-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+				<div className="absolute -top-40 -right-40 size-80 bg-purple-300/30 dark:bg-purple-500/10 rounded-full blur-3xl animate-pulse" />
+				<div className="absolute -bottom-40 -left-40 size-80 bg-indigo-300/30 dark:bg-indigo-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
 			</div>
 
 			<div
 				className={cn(
-					'relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 lg:py-32 flex flex-col gap-8 md:gap-16',
+					'relative container mx-auto px-4 sm:px-6 py-16 md:py-24 lg:py-32 flex flex-col gap-8 md:gap-16',
 					layout === 'image_center'
 						? 'items-center text-center'
 						: layout === 'image_left'
@@ -161,8 +161,8 @@ export default function Hero({ data }: HeroProps) {
 						</div>
 
 						{/* Decorative Elements */}
-						<div className="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full blur-2xl opacity-50 animate-pulse" />
-						<div className="absolute -bottom-4 -left-4 w-32 h-32 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-full blur-2xl opacity-50 animate-pulse" style={{ animationDelay: '1.5s' }} />
+						<div className="absolute -top-4 -right-4 size-24 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full blur-2xl opacity-50 animate-pulse" />
+						<div className="absolute -bottom-4 -left-4 size-32 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-full blur-2xl opacity-50 animate-pulse" style={{ animationDelay: '1.5s' }} />
 					</div>
 				)}
 			</div>

@@ -14,11 +14,11 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
-import { ChevronDown, Menu, X } from 'lucide-react';
-import ThemeToggle from '../ui/ThemeToggle';
+import { ChevronDown, Menu, X, Ticket, Calendar, CalendarCheck } from 'lucide-react';
 import SearchModal from '@/components/ui/SearchModal';
 import Container from '@/components/ui/container';
 import { UserMenuDropdown } from '@/components/ui/user-menu-dropdown';
+import { useServerAuth } from '@/hooks/useServerAuth';
 import { setAttr } from '@directus/visual-editing';
 
 interface NavigationBarProps {
@@ -29,6 +29,7 @@ interface NavigationBarProps {
 const NavigationBar = forwardRef<HTMLElement, NavigationBarProps>(({ navigation, globals }, ref) => {
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
+	const { isOrganizer, isAuthenticated } = useServerAuth();
 
 	const directusURL = process.env.NEXT_PUBLIC_DIRECTUS_URL;
 	const lightLogoUrl = globals?.logo ? `${directusURL}/assets/${globals.logo}` : '/images/logo.svg';
@@ -39,7 +40,8 @@ const NavigationBar = forwardRef<HTMLElement, NavigationBarProps>(({ navigation,
 			setScrolled(window.scrollY > 20);
 		};
 		window.addEventListener('scroll', handleScroll);
-		return () => window.removeEventListener('scroll', handleScroll);
+		
+return () => window.removeEventListener('scroll', handleScroll);
 	}, []);
 
 	const handleLinkClick = () => {
@@ -55,7 +57,7 @@ const NavigationBar = forwardRef<HTMLElement, NavigationBarProps>(({ navigation,
 					: 'bg-transparent'
 			}`}
 		>
-			<Container className="flex items-center justify-between py-4 px-4">
+			<Container className="flex items-center justify-between p-4">
 				<Link href="/" className="flex-shrink-0 group">
 					<div className="relative">
 						<Image
@@ -131,13 +133,60 @@ const NavigationBar = forwardRef<HTMLElement, NavigationBarProps>(({ navigation,
 
 					<div className="hidden lg:flex items-center gap-2 border-l border-gray-300 dark:border-gray-700 pl-3 ml-2">
 						<SearchModal />
-						<ThemeToggle />
+						{isAuthenticated && (
+							<>
+								{isOrganizer && (
+									<>
+										<Button variant="ghost" size="sm" asChild className="gap-2">
+											<Link href="/admin/eventos/novo">
+												<Calendar className="size-4" />
+												<span className="hidden xl:inline">Criar evento</span>
+											</Link>
+										</Button>
+										<Button variant="ghost" size="sm" asChild className="gap-2">
+											<Link href="/admin/eventos">
+												<CalendarCheck className="size-4" />
+												<span className="hidden xl:inline">Meus eventos</span>
+											</Link>
+										</Button>
+									</>
+								)}
+								<Button variant="ghost" size="sm" asChild className="gap-2">
+									<Link href="/meus-ingressos">
+										<Ticket className="size-4" />
+										<span className="hidden xl:inline">Meus ingressos</span>
+									</Link>
+								</Button>
+							</>
+						)}
 						<UserMenuDropdown />
 					</div>
 
 					<div className="flex lg:hidden items-center gap-2">
 						<SearchModal />
-						<ThemeToggle />
+						{isAuthenticated && (
+							<>
+								{isOrganizer && (
+									<>
+										<Button variant="ghost" size="icon" asChild>
+											<Link href="/admin/eventos/novo" aria-label="Criar evento">
+												<Calendar className="size-4" />
+											</Link>
+										</Button>
+										<Button variant="ghost" size="icon" asChild>
+											<Link href="/admin/eventos" aria-label="Meus eventos">
+												<CalendarCheck className="size-4" />
+											</Link>
+										</Button>
+									</>
+								)}
+								<Button variant="ghost" size="icon" asChild>
+									<Link href="/meus-ingressos" aria-label="Meus ingressos">
+										<Ticket className="size-4" />
+									</Link>
+								</Button>
+							</>
+						)}
 						<UserMenuDropdown />
 						<DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
 							<DropdownMenuTrigger asChild>
@@ -145,7 +194,7 @@ const NavigationBar = forwardRef<HTMLElement, NavigationBarProps>(({ navigation,
 									variant="ghost"
 									size="icon"
 									aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
-									className="relative w-10 h-10 rounded-lg hover:bg-gradient-to-r hover:from-purple-500 hover:to-indigo-600 hover:text-white transition-all duration-300"
+									className="relative size-10 rounded-lg hover:bg-gradient-to-r hover:from-purple-500 hover:to-indigo-600 hover:text-white transition-all duration-300"
 								>
 									{menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
 								</Button>

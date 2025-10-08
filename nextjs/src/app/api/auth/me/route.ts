@@ -22,6 +22,9 @@ export async function GET() {
 				last_name: auth.user.last_name,
 				role: auth.user.role,
 			},
+			isOrganizer: auth.isOrganizer,
+			organizerStatus: auth.organizerStatus ?? null,
+			hasPendingOrganizerRequest: auth.hasPendingOrganizerRequest ?? false,
 		});
 	} catch (error) {
 		console.error('[Auth API] Error getting current user:', error);

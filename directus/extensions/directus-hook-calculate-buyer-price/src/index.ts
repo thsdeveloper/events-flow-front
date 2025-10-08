@@ -37,6 +37,13 @@ export default defineHook(({ filter, action }, { services, getSchema }) => {
 		const { ItemsService } = services;
 		const schema = await getSchema();
 
+		console.log('[calculate-buyer-price] CREATE triggered with input:', {
+			price: input.price,
+			service_fee_type: input.service_fee_type,
+			buyer_price: input.buyer_price,
+			keys: Object.keys(input),
+		});
+
 		// Buscar configuração de taxas
 		const configService = new ItemsService('event_configurations', {
 			schema,
@@ -47,6 +54,11 @@ export default defineHook(({ filter, action }, { services, getSchema }) => {
 		const config = configs[0];
 
 		if (!config || !input.price || !input.service_fee_type) {
+			console.log('[calculate-buyer-price] Skipping calculation:', {
+				hasConfig: !!config,
+				hasPrice: !!input.price,
+				hasServiceFeeType: !!input.service_fee_type,
+			});
 			return input;
 		}
 
@@ -56,12 +68,20 @@ export default defineHook(({ filter, action }, { services, getSchema }) => {
 			stripeFixedFee: Number(config.stripe_fixed_fee || 0.5),
 		};
 
+		console.log('[calculate-buyer-price] Fee config:', feeConfig);
+
 		// Calcular buyer_price
 		const buyerPrice = calculateBuyerPrice(
 			Number(input.price),
 			input.service_fee_type,
 			feeConfig
 		);
+
+		console.log('[calculate-buyer-price] Calculated buyer_price:', {
+			inputPrice: Number(input.price),
+			serviceFeeType: input.service_fee_type,
+			calculatedBuyerPrice: buyerPrice,
+		});
 
 		return {
 			...input,
@@ -73,8 +93,31 @@ export default defineHook(({ filter, action }, { services, getSchema }) => {
 		const { ItemsService } = services;
 		const schema = await getSchema();
 
-		// Se o preço ou service_fee_type não foi alterado, não precisa recalcular
-		if (!input.price && !input.service_fee_type) {
+		// Log para debug
+		console.log('[calculate-buyer-price] Update triggered with input:', {
+			hasPrice: !!input.price,
+			hasServiceFeeType: !!input.service_fee_type,
+			hasBuyerPrice: !!input.buyer_price,
+			hasQuantitySold: !!input.quantity_sold,
+			keys: Object.keys(input),
+		});
+
+		// Only skip recalculation if ONLY quantity_sold is being updated
+		// Recalculate if: price, service_fee_type, or buyer_price changes
+		const isOnlyQuantitySoldUpdate =
+			input.quantity_sold !== undefined &&
+			!input.price &&
+			!input.service_fee_type &&
+			!input.buyer_price;
+
+		if (isOnlyQuantitySoldUpdate) {
+			console.log('[calculate-buyer-price] Skipping recalculation - only quantity_sold changed');
+			return input;
+		}
+
+		// If none of the price-related fields are being updated, skip
+		if (!input.price && !input.service_fee_type && !input.buyer_price) {
+			console.log('[calculate-buyer-price] Skipping recalculation - no price-related fields in update');
 			return input;
 		}
 

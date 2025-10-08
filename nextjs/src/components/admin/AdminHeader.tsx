@@ -38,7 +38,7 @@ export default function AdminHeader({ user, organizer, title }: AdminHeaderProps
 	const userInitials = `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase() || 'U';
 
 	return (
-		<header className="sticky top-0 z-30 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-gray-800 backdrop-blur-lg bg-white/95 dark:bg-slate-900/95">
+		<header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 border-b border-gray-200 dark:border-gray-800 backdrop-blur-lg">
 			<div className="flex items-center justify-between h-16 px-6">
 				{/* Left: Page Title or Search */}
 				<div className="flex items-center gap-4 flex-1">
@@ -98,7 +98,7 @@ export default function AdminHeader({ user, organizer, title }: AdminHeaderProps
 							<ChevronDown className="size-4 text-gray-500 dark:text-gray-400" />
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end" className="w-64">
-							<div className="px-3 py-3">
+							<div className="p-3">
 								<p className="text-sm font-semibold text-gray-900 dark:text-white">
 									{userName}
 								</p>

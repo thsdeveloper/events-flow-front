@@ -14,7 +14,9 @@ export function useDirectusClient() {
 
 	useEffect(() => {
 		// Get token from server via cookie-based authentication
-		fetch('/api/auth/token')
+		fetch('/api/auth/token', {
+			credentials: 'same-origin', // Ensure cookies are sent with the request
+		})
 			.then((res) => {
 				if (!res.ok) throw new Error('Failed to get token');
 

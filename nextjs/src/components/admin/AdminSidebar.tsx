@@ -12,6 +12,7 @@ import {
 	ChevronRight,
 	Building2,
 	Ticket,
+	UserCog,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -51,6 +52,11 @@ const navigationItems = [
 		name: 'Configurações',
 		href: '/admin/configuracoes',
 		icon: Settings,
+	},
+	{
+		name: 'Minha Conta',
+		href: '/admin/minha-conta',
+		icon: UserCog,
 	},
 ];
 

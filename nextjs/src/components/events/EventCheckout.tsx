@@ -16,6 +16,10 @@ interface EventCheckoutProps {
   eventTitle: string;
   tickets: EventTicket[];
   userId?: string;
+  defaultParticipantInfo?: {
+    name: string;
+    email: string;
+  };
 }
 
 export default function EventCheckout({
@@ -23,12 +27,13 @@ export default function EventCheckout({
   eventTitle,
   tickets,
   userId,
+  defaultParticipantInfo,
 }: EventCheckoutProps) {
   const [selectedTickets, setSelectedTickets] = useState<TicketSelectionItem[]>([]);
   const [showParticipantForm, setShowParticipantForm] = useState(false);
   const [participantInfo, setParticipantInfo] = useState({
-    name: '',
-    email: '',
+    name: defaultParticipantInfo?.name || '',
+    email: defaultParticipantInfo?.email || '',
     phone: '',
     document: '',
   });

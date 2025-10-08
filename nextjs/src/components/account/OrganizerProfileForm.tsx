@@ -19,13 +19,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Organizer } from '@/types/directus-schema';
 import { Loader2, Save, Upload, Plus, Building2, Info, CreditCard } from 'lucide-react';
@@ -38,7 +32,6 @@ const organizerProfileSchema = z.object({
 	description: z.string().optional().nullable(),
 	website: z.string().url('URL inválida').optional().or(z.literal('')).nullable(),
 	document: z.string().optional().nullable(),
-	status: z.enum(['active', 'pending', 'archived']).optional(),
 });
 
 type OrganizerProfileFormValues = z.infer<typeof organizerProfileSchema>;
@@ -55,6 +48,16 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 	const [logoFile, setLogoFile] = useState<File | null>(null);
 	const [logoPreview, setLogoPreview] = useState<string | null>(null);
 	const { toast } = useToast();
+	const organizerStatusLabel = organizer?.status === 'pending'
+		? 'Pendente'
+		: organizer?.status === 'archived'
+			? 'Arquivado'
+			: 'Ativo';
+	const organizerStatusBadgeClass = organizer?.status === 'active'
+		? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'
+		: organizer?.status === 'pending'
+			? 'bg-amber-500/10 text-amber-600 border-amber-500/30'
+			: 'bg-slate-500/10 text-slate-600 border-slate-500/30';
 
 	const form = useForm<OrganizerProfileFormValues>({
 		resolver: zodResolver(organizerProfileSchema),
@@ -64,7 +67,6 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 			description: '',
 			website: '',
 			document: '',
-			status: 'active',
 		},
 	});
 
@@ -102,7 +104,6 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 					description: org.description || '',
 					website: org.website || '',
 					document: org.document || '',
-					status: org.status || 'active',
 				});
 			}
 		} catch (error) {
@@ -147,7 +148,6 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 				description: values.description || null,
 				website: values.website || null,
 				document: values.document || null,
-				status: values.status || 'active',
 				...(logoId && { logo: logoId }),
 			};
 
@@ -166,6 +166,7 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 				await client.request(
 					createItem('organizers', {
 						...organizerData,
+						status: 'active',
 						user_id: userId,
 					})
 				);
@@ -258,11 +259,25 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 								<FormDescription className="mt-2">
 									Formatos aceitos: JPG, PNG. Tamanho máximo: 5MB
 								</FormDescription>
-							</div>
-						</div>
 					</div>
+					</div>
+				</div>
 
-					<FormField
+				{organizer && (
+					<div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-4 py-3">
+						<Badge variant="outline" className={organizerStatusBadgeClass}>
+							Status: {organizerStatusLabel}
+						</Badge>
+
+						{organizer.status === 'pending' && (
+							<p className="text-sm text-muted-foreground">
+								Aguarde a aprovação da nossa equipe para liberar todos os recursos de organizador.
+							</p>
+						)}
+					</div>
+				)}
+
+				<FormField
 						control={form.control}
 						name="email"
 						render={({ field }) => (
@@ -350,29 +365,6 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 								<FormDescription>
 									Esta descrição será exibida nos eventos que você organizar
 								</FormDescription>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-
-					<FormField
-						control={form.control}
-						name="status"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Status</FormLabel>
-								<Select onValueChange={field.onChange} value={field.value}>
-									<FormControl>
-										<SelectTrigger>
-											<SelectValue placeholder="Selecione o status" />
-										</SelectTrigger>
-									</FormControl>
-									<SelectContent>
-										<SelectItem value="active">Ativo</SelectItem>
-										<SelectItem value="pending">Pendente</SelectItem>
-										<SelectItem value="archived">Arquivado</SelectItem>
-									</SelectContent>
-								</Select>
 								<FormMessage />
 							</FormItem>
 						)}

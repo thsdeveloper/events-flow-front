@@ -18,6 +18,9 @@ interface ServerAuthState {
 	user: User | null;
 	isLoading: boolean;
 	isAuthenticated: boolean;
+ 	isOrganizer: boolean;
+	organizerStatus: string | null;
+	hasPendingOrganizerRequest: boolean;
 }
 
 /**
@@ -39,6 +42,9 @@ export function useServerAuth(): ServerAuthState & {
 } {
 	const [user, setUser] = useState<User | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
+	const [isOrganizer, setIsOrganizer] = useState(false);
+	const [organizerStatus, setOrganizerStatus] = useState<string | null>(null);
+	const [hasPendingOrganizerRequest, setHasPendingOrganizerRequest] = useState(false);
 	const router = useRouter();
 
 	const fetchUser = async () => {
@@ -57,9 +63,15 @@ export function useServerAuth(): ServerAuthState & {
 
 			const data = await response.json();
 			setUser(data.user);
+			setIsOrganizer(Boolean(data.isOrganizer));
+			setOrganizerStatus(data.organizerStatus ?? null);
+			setHasPendingOrganizerRequest(Boolean(data.hasPendingOrganizerRequest));
 		} catch (error) {
 			console.error('Error fetching user:', error);
 			setUser(null);
+			setIsOrganizer(false);
+			setOrganizerStatus(null);
+			setHasPendingOrganizerRequest(false);
 		} finally {
 			setIsLoading(false);
 		}
@@ -88,6 +100,9 @@ export function useServerAuth(): ServerAuthState & {
 		user,
 		isLoading,
 		isAuthenticated: !!user,
+		isOrganizer,
+		organizerStatus,
+		hasPendingOrganizerRequest,
 		logout,
 		refresh,
 	};

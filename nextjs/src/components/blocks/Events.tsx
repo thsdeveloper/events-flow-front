@@ -97,7 +97,7 @@ return date.toLocaleTimeString('pt-BR', {
 			<div className="absolute inset-0 bg-gradient-to-b from-white via-purple-50/30 to-white dark:from-slate-900 dark:via-purple-900/10 dark:to-slate-900 -z-10" />
 			<div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
 
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+			<div className="container mx-auto px-4 sm:px-6">
 				{/* Header */}
 				<div className="text-center mb-16">
 					{headline && (
@@ -196,7 +196,7 @@ return date.toLocaleTimeString('pt-BR', {
 												)}
 
 												{/* Badges */}
-												<div className="absolute top-4 left-4 right-4 flex items-start justify-between gap-2">
+												<div className="absolute top-4 inset-x-4 flex items-start justify-between gap-2">
 													{event.featured && (
 														<div className="flex items-center gap-1.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg backdrop-blur-sm">
 															<Sparkles className="size-3" />
@@ -239,7 +239,7 @@ return date.toLocaleTimeString('pt-BR', {
 
 												<div className="space-y-3 pt-2 border-t border-gray-100 dark:border-gray-700">
 													<div className="flex items-center gap-2.5">
-														<div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+														<div className="flex-shrink-0 size-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
 															<Calendar className="size-4 text-white" />
 														</div>
 														<div className="flex-1 min-w-0">
@@ -252,7 +252,7 @@ return date.toLocaleTimeString('pt-BR', {
 
 													{event.location_name && (
 														<div className="flex items-center gap-2.5">
-															<div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center">
+															<div className="flex-shrink-0 size-8 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center">
 																<MapPin className="size-4 text-white" />
 															</div>
 															<div className="flex-1 min-w-0">

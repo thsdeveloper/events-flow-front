@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { fetchEventBySlug } from '@/lib/directus/fetchers';
 import EventCheckout from '@/components/events/EventCheckout';
 import type { EventTicket } from '@/types/directus-schema';
+import { requireAuth } from '@/lib/auth/server-auth';
 
 interface CheckoutPageProps {
   params: Promise<{
@@ -10,6 +11,9 @@ interface CheckoutPageProps {
 }
 
 export default async function CheckoutPage({ params }: CheckoutPageProps) {
+  // Requerer autenticação - redireciona para login se não autenticado
+  const auth = await requireAuth(`/eventos/${(await params).slug}/checkout`);
+
   const { slug } = await params;
 
   let event;
@@ -51,12 +55,18 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
     );
   }
 
+  // Pré-preencher dados do participante com informações do usuário autenticado
+  const defaultParticipantInfo = {
+    name: `${auth.user.first_name || ''} ${auth.user.last_name || ''}`.trim() || auth.user.email,
+    email: auth.user.email,
+  };
+
   return (
     <EventCheckout
       eventId={event.id}
       eventTitle={event.title}
       tickets={activeTickets}
-      // userId pode ser obtido da sessão aqui se necessário
+      defaultParticipantInfo={defaultParticipantInfo}
     />
   );
 }

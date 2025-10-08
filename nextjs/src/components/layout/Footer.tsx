@@ -39,8 +39,8 @@ const Footer = forwardRef<HTMLElement, FooterProps>(({ navigation, globals }, re
 		<footer ref={ref} className="relative bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 text-white overflow-hidden">
 			{/* Animated Background Elements */}
 			<div className="absolute inset-0 overflow-hidden pointer-events-none">
-				<div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse" />
-				<div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+				<div className="absolute -top-40 -right-40 size-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse" />
+				<div className="absolute -bottom-40 -left-40 size-80 bg-indigo-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
 			</div>
 
 			<Container className="relative z-10 py-16">
@@ -82,7 +82,7 @@ const Footer = forwardRef<HTMLElement, FooterProps>(({ navigation, globals }, re
 											href={social.url}
 											target="_blank"
 											rel="noopener noreferrer"
-											className="w-10 h-10 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 flex items-center justify-center hover:bg-gradient-to-r hover:from-purple-600 hover:to-indigo-600 hover:border-transparent transition-all duration-300 group"
+											className="size-10 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 flex items-center justify-center hover:bg-gradient-to-r hover:from-purple-600 hover:to-indigo-600 hover:border-transparent transition-all duration-300 group"
 											title={social.service}
 										>
 											<img
@@ -111,7 +111,7 @@ const Footer = forwardRef<HTMLElement, FooterProps>(({ navigation, globals }, re
 												href={item.page.permalink}
 												className="text-gray-300 hover:text-white text-sm transition-colors duration-300 flex items-center gap-2 group"
 											>
-												<span className="w-1.5 h-1.5 rounded-full bg-purple-500 group-hover:w-3 transition-all duration-300" />
+												<span className="size-1.5 rounded-full bg-purple-500 group-hover:w-3 transition-all duration-300" />
 												{item.title}
 											</Link>
 										) : (
@@ -119,7 +119,7 @@ const Footer = forwardRef<HTMLElement, FooterProps>(({ navigation, globals }, re
 												href={item.url || '#'}
 												className="text-gray-300 hover:text-white text-sm transition-colors duration-300 flex items-center gap-2 group"
 											>
-												<span className="w-1.5 h-1.5 rounded-full bg-purple-500 group-hover:w-3 transition-all duration-300" />
+												<span className="size-1.5 rounded-full bg-purple-500 group-hover:w-3 transition-all duration-300" />
 												{item.title}
 											</a>
 										)}

@@ -43,6 +43,14 @@ This is a Directus CMS starter template repository containing multiple frontend 
 - Supports Directus Live Preview integration with token-based authentication
 - Visual editing enabled via `@directus/visual-editing` package
 
+**Stripe Integration (Payments & Connect):**
+- All Stripe integration is implemented in Next.js (not in Directus extensions)
+- `src/app/api/stripe/webhook/route.ts` - Webhook handler for payment events
+- `src/app/api/organizer/stripe/onboarding/route.ts` - Stripe Connect onboarding for event organizers
+- `src/lib/stripe/webhooks.ts` - Webhook event handlers (payment_intent.succeeded, account.updated)
+- Webhooks update Directus collections via admin token (`DIRECTUS_ADMIN_TOKEN`)
+- For local development, use Stripe CLI: `stripe listen --forward-to localhost:3000/api/stripe/webhook`
+
 ## Development Commands
 
 ### Directus (Backend)

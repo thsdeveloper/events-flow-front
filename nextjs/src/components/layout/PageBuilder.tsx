@@ -1,6 +1,5 @@
 import { PageBlock } from '@/types/directus-schema';
 import BaseBlock from '@/components/blocks/BaseBlock';
-import Container from '@/components/ui/container';
 
 interface PageBuilderProps {
 	sections: PageBlock[];
@@ -13,10 +12,9 @@ const PageBuilder = ({ sections }: PageBuilderProps) => {
 	);
 
 	return (
-		<div>
+		<main>
 			{validBlocks.map((block) => (
-				<div key={block.id} data-background={block.background} className="py-16">
-					<Container>
+				<div key={block.id} data-background={block.background}>
 						<BaseBlock
 							block={{
 								collection: block.collection,
@@ -24,10 +22,9 @@ const PageBuilder = ({ sections }: PageBuilderProps) => {
 								id: block.id,
 							}}
 						/>
-					</Container>
 				</div>
 			))}
-		</div>
+		</main>
 	);
 };
 

@@ -18,7 +18,8 @@ export default function EventosPage() {
 		const fetchEvents = async () => {
 			if (!client) {
 				setLoading(false);
-				return;
+				
+return;
 			}
 
 			try {
@@ -140,7 +141,8 @@ interface EventCardProps {
 function EventCard({ event }: EventCardProps) {
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString);
-		return date.toLocaleDateString('pt-BR', {
+		
+return date.toLocaleDateString('pt-BR', {
 			day: 'numeric',
 			month: 'long',
 			year: 'numeric',
@@ -170,7 +172,8 @@ function EventCard({ event }: EventCardProps) {
 		};
 
 		const statusInfo = statusMap[status || 'draft'];
-		return (
+		
+return (
 			<span className={`px-2 py-1 text-xs font-medium rounded ${statusInfo.className}`}>
 				{statusInfo.label}
 			</span>
@@ -184,7 +187,8 @@ function EventCard({ event }: EventCardProps) {
 		if (event.event_type === 'hybrid') {
 			return `${event.location_address || 'Híbrido'} (Online e Presencial)`;
 		}
-		return event.location_address || event.location_name || 'Local a definir';
+		
+return event.location_address || event.location_name || 'Local a definir';
 	};
 
 	// Count registrations (placeholder for now)

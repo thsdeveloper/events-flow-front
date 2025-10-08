@@ -1,16 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createDirectus, rest, createUser, withToken } from '@directus/sdk';
-import type { Schema } from '@/types/directus-schema';
+import { getDefaultClientRoleId } from '@/lib/auth/roles';
 
 export async function POST(request: NextRequest) {
 	try {
-		const { email, password, first_name, last_name } = await request.json();
+		const { email, password, firstName, lastName } = await request.json();
 
 		// Validate input
-		if (!email || !password || !first_name || !last_name) {
+		if (!email || !password || !firstName || !lastName) {
 			return NextResponse.json(
 				{ error: 'Todos os campos são obrigatórios' },
 				{ status: 400 }
+			);
+		}
+
+		const roleId = getDefaultClientRoleId();
+
+		if (!roleId) {
+			console.error('Missing Directus client role configuration.');
+
+			return NextResponse.json(
+				{ error: 'Configuração do servidor inválida' },
+				{ status: 500 }
 			);
 		}
 
@@ -39,9 +49,9 @@ export async function POST(request: NextRequest) {
 			body: JSON.stringify({
 				email,
 				password,
-				first_name,
-				last_name,
-				role: process.env.DIRECTUS_DEFAULT_USER_ROLE || null,
+				first_name: firstName,
+				last_name: lastName,
+				role: roleId,
 				status: 'active',
 			}),
 		});

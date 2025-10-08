@@ -12,7 +12,7 @@ export async function GET(request: Request) {
 	const { directus, readItems } = useDirectus();
 
 	try {
-		const [pages, posts] = await Promise.all([
+		const [pages, posts, events] = await Promise.all([
 			directus.request(
 				readItems('pages', {
 					filter: {
@@ -40,23 +40,49 @@ export async function GET(request: Request) {
 					fields: ['id', 'title', 'description', 'slug', 'content', 'status'],
 				}),
 			),
+
+			directus.request(
+				readItems('events', {
+					filter: {
+						_and: [
+							{ status: { _eq: 'published' } },
+							{
+								_or: [
+									{ title: { _contains: search } },
+									{ description: { _contains: search } },
+									{ slug: { _contains: search } },
+								],
+							},
+						],
+					},
+					fields: ['id', 'title', 'description', 'slug', 'status', 'start_date'],
+				}),
+			),
 		]);
 
 		const results = [
 			...pages.map((page: any) => ({
 				id: page.id,
 				title: page.title,
-				description: page.seo.meta_description,
-				type: 'Page',
+				description: page?.seo?.meta_description || page.title,
+				type: 'Página',
 				link: `/${page.permalink.replace(/^\/+/, '')}`,
 			})),
 
 			...posts.map((post: any) => ({
 				id: post.id,
 				title: post.title,
-				description: post.description,
-				type: 'Post',
+				description: post.description || '',
+				type: 'Blog',
 				link: `/blog/${post.slug}`,
+			})),
+
+			...events.map((event: any) => ({
+				id: event.id,
+				title: event.title,
+				description: event.description || '',
+				type: 'Evento',
+				link: `/eventos/${event.slug}`,
 			})),
 		];
 

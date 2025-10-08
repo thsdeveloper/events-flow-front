@@ -1,0 +1,17 @@
+{
+  "status": "init",
+  "scope": "codebase",
+  "type": "frontend",
+  "localEndpoint": "http://localhost:3001",
+  "serverPort": 46703,
+  "executionArgs": {
+    "projectName": "nextjs",
+    "projectPath": "/home/pcthiago/projetos/directus/thiago-pereira/nextjs",
+    "testIds": [],
+    "additionalInstruction": "Teste apenas os casos que foram corrigidos: TC002 (User Login Success), TC004 (Password Reset Flow), TC006 (Event Creation - registration), TC018 (Site Wide Search), e verifique se o erro de validação do registro foi resolvido.",
+    "envs": {
+      "API_KEY": "sk-user-eW0wSo_NSMs_Ea9mRkmqL7uLtJbnXnovfSJp2M2iG9wlDH7RkGfvWNdqKIA2yRFFZovIbyDTnRjegqQuGNIFy1AQezl7tJVhM7lGzAO_uD2pnhf5Jul6VE1l3r3bJHLtISQ"
+    }
+  },
+  "proxy": "http://d796169b-7383-43e7-8f00-2c8ee6219cfd:K8NGZI8itxpA0Kug9XmjECI17uFDjTvl@tun.testsprite.com:8080"
+}

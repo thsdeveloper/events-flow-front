@@ -8,10 +8,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { User, Building2, Loader2, Mail, Camera, Shield, BarChart3, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { UserProfileForm } from './UserProfileForm';
 import { OrganizerProfileForm } from './OrganizerProfileForm';
+import { OrganizerRequestCard } from './OrganizerRequestCard';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 export function AccountPageContent() {
-	const { user, isLoading } = useServerAuth();
+	const {
+		user,
+		isLoading,
+		isOrganizer,
+		hasPendingOrganizerRequest,
+		organizerStatus,
+		refresh,
+	} = useServerAuth();
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const [activeTab, setActiveTab] = useState('profile');
@@ -47,6 +55,25 @@ export function AccountPageContent() {
 	if (!user) {
 		return null;
 	}
+
+	const accountTypeLabel = isOrganizer ? 'Organizador' : 'Comprador';
+	const accountTypeDescription = isOrganizer
+		? 'Gerencia eventos e compras'
+		: hasPendingOrganizerRequest
+			? 'Solicitação de organizador em análise'
+			: 'Compra ingressos e acessa eventos';
+	const organizerStatusLabel = organizerStatus
+		? organizerStatus === 'active'
+			? 'Organizador ativo'
+			: organizerStatus === 'pending'
+				? 'Solicitação pendente'
+				: `Status: ${organizerStatus}`
+		: 'Sem cadastro de organizador';
+	const organizerStatusColor = organizerStatus === 'pending'
+		? 'text-amber-600'
+		: organizerStatus === 'active'
+			? 'text-green-600'
+			: 'text-muted-foreground';
 
 	return (
 		<div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -109,16 +136,16 @@ export function AccountPageContent() {
 								{user.email}
 							</p>
 						</div>
-						<div className="flex gap-4">
-							<div className="bg-white/20 backdrop-blur-sm rounded-xl px-6 py-4 text-center">
-								<div className="text-3xl font-bold">0</div>
-								<div className="text-sm text-white/80">Eventos</div>
-							</div>
-							<div className="bg-white/20 backdrop-blur-sm rounded-xl px-6 py-4 text-center">
-								<div className="text-3xl font-bold">0</div>
-								<div className="text-sm text-white/80">Inscritos</div>
-							</div>
+					<div className="flex gap-4">
+						<div className="bg-white/20 backdrop-blur-sm rounded-xl px-6 py-4 text-center">
+							<div className="text-3xl font-bold">0</div>
+							<div className="text-sm text-white/80">Eventos</div>
 						</div>
+						<div className="bg-white/20 backdrop-blur-sm rounded-xl px-6 py-4 text-center">
+							<div className="text-3xl font-bold">0</div>
+							<div className="text-sm text-white/80">Inscritos</div>
+						</div>
+					</div>
 					</div>
 				</div>
 
@@ -132,7 +159,9 @@ export function AccountPageContent() {
 								</div>
 								<div>
 									<p className="text-sm text-muted-foreground">Status da Conta</p>
-									<p className="text-lg font-semibold text-green-600">Ativo</p>
+									<p className={`text-lg font-semibold ${organizerStatusColor}`}>
+										{organizerStatusLabel}
+									</p>
 								</div>
 							</div>
 						</CardContent>
@@ -146,7 +175,8 @@ export function AccountPageContent() {
 								</div>
 								<div>
 									<p className="text-sm text-muted-foreground">Tipo de Conta</p>
-									<p className="text-lg font-semibold">Organizador</p>
+									<p className="text-lg font-semibold">{accountTypeLabel}</p>
+									<p className="text-xs text-muted-foreground mt-1">{accountTypeDescription}</p>
 								</div>
 							</div>
 						</CardContent>
@@ -206,22 +236,31 @@ export function AccountPageContent() {
 					</TabsContent>
 
 					<TabsContent value="organizer" className="space-y-6 animate-in fade-in-50 duration-300">
-						<Card className="border-t-4 border-t-primary shadow-xl hover:shadow-2xl transition-shadow">
-							<CardHeader className="bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
-								<CardTitle className="flex items-center gap-3 text-2xl">
-									<div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
-										<Building2 className="size-5 text-primary" />
-									</div>
-									Perfil de Organizador
-								</CardTitle>
-								<CardDescription className="text-base">
-									Gerencie as informações do seu perfil como organizador de eventos
-								</CardDescription>
-							</CardHeader>
-							<CardContent className="pt-8">
-								<OrganizerProfileForm userId={user.id} />
-							</CardContent>
-						</Card>
+						{isOrganizer ? (
+							<Card className="border-t-4 border-t-primary shadow-xl hover:shadow-2xl transition-shadow">
+								<CardHeader className="bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
+									<CardTitle className="flex items-center gap-3 text-2xl">
+										<div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
+											<Building2 className="size-5 text-primary" />
+										</div>
+										Área do Organizador
+									</CardTitle>
+									<CardDescription className="text-base">
+										Gerencie as informações do seu perfil como organizador e configure pagamentos
+									</CardDescription>
+								</CardHeader>
+								<CardContent className="pt-8">
+									<OrganizerProfileForm userId={user.id} />
+								</CardContent>
+							</Card>
+						) : (
+								<OrganizerRequestCard
+									user={user}
+									hasPendingRequest={hasPendingOrganizerRequest}
+									organizerStatus={organizerStatus}
+									onSubmitted={refresh}
+								/>
+						)}
 					</TabsContent>
 				</Tabs>
 			</div>

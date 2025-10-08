@@ -15,6 +15,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { readMe, readItems } from '@directus/sdk';
 import { getAuthClient, getAuthenticatedClient } from '@/lib/directus/directus';
+import { isOrganizerRole } from '@/lib/auth/roles';
 
 /**
  * Route configuration - Define which routes require authentication
@@ -167,26 +168,32 @@ export async function middleware(request: NextRequest) {
 			})
 		);
 
-		// Check if user is an organizer
-		const organizers = await client.request(
-			readItems('organizers', {
-				filter: {
-					user_id: { _eq: user.id },
-					status: { _in: ['active', 'pending'] },
-				},
-				fields: ['id', 'name'],
-				limit: 1,
-			})
-		);
+		const hasOrganizerRole = isOrganizerRole(user.role);
+		let organizerId: string | null = null;
 
-		const isOrganizer = organizers.length > 0;
-		const organizerId = isOrganizer ? organizers[0].id : null;
+		if (hasOrganizerRole) {
+			const organizers = await client.request(
+				readItems('organizers', {
+					filter: {
+						user_id: { _eq: user.id },
+						status: { _in: ['active', 'pending'] },
+					},
+					fields: ['id', 'name'],
+					limit: 1,
+				})
+			);
+
+			organizerId = organizers.length > 0 ? organizers[0].id : null;
+		}
+
+		const isOrganizer = hasOrganizerRole;
 
 		// Enforce role-based access control
 		if (matchesRoute(pathname, ROUTES.admin)) {
 			// Admin routes - require organizer role
 			if (!isOrganizer) {
 				console.log(`[Middleware] Non-organizer trying to access ${pathname}, redirecting to /perfil`);
+
 				return NextResponse.redirect(new URL('/perfil', request.url));
 			}
 		}
