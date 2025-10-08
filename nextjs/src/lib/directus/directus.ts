@@ -18,13 +18,9 @@ import type { Schema } from '@/types/directus-schema';
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const fetchRetry = async (count: number, ...args: Parameters<typeof fetch>) => {
 	const response = await fetch(...args);
-
 	if (count > 2 || response.status !== 429) return response;
-
 	console.warn(`[429] Too Many Requests (Attempt ${count + 1})`);
-
 	await sleep(500);
-
 	return fetchRetry(count + 1, ...args);
 };
 
@@ -58,19 +54,10 @@ export function getAuthenticatedClient(token: string) {
 		globals: {
 			fetch: async (...args) => {
 				const [url, options] = args;
-				console.log('=== Directus Request ===');
-				console.log('URL:', url);
-				console.log('Method:', options?.method || 'GET');
-				console.log('Headers:', options?.headers);
-				if (options?.body) {
-					console.log('Body:', typeof options.body === 'string' ? JSON.parse(options.body) : options.body);
-				}
 				const response = await queue.add(() => fetchRetry(0, ...args));
 				if (response) {
-					console.log('Response status:', response.status);
 					if (!response.ok) {
 						const errorText = await response.clone().text();
-						console.error('Response error:', errorText);
 					}
 				}
 

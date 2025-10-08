@@ -8,7 +8,7 @@ export interface ButtonGroupProps {
 const ButtonGroup = ({ buttons, className }: ButtonGroupProps) => {
 	return (
 		<div className={`flex flex-wrap gap-4 ${className || ''}`}>
-			{buttons?.map((button) => <Button key={button.id} {...button} />)}
+			{buttons?.map((button) => <Button key={button.id} {...button} size="lg" />)}
 		</div>
 	);
 };

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
 	Bell,
 	Calendar,
@@ -11,6 +12,7 @@ import {
 	Mail,
 	Palette,
 	Phone,
+	Receipt,
 	Save,
 	ShieldCheck,
 	Ticket,
@@ -18,8 +20,11 @@ import {
 } from 'lucide-react';
 import { useServerAuth } from '@/hooks/useServerAuth';
 import { useToast } from '@/hooks/use-toast';
+import { TransactionHistory } from '@/components/account/TransactionHistory';
+import { MyTicketsContent } from '@/components/tickets/MyTicketsContent';
+import type { EventRegistration } from '@/types/directus-schema';
 
-type Tab = 'perfil' | 'preferencias';
+type Tab = 'perfil' | 'preferencias' | 'transacoes' | 'ingressos';
 
 interface PersonalData {
 	first_name: string;
@@ -33,26 +38,6 @@ interface PasswordData {
 	confirm: string;
 }
 
-const quickHighlights = [
-	{
-		title: 'Ingressos ativos',
-		value: '0',
-		caption: 'Veja seus próximos eventos',
-		icon: Ticket,
-	},
-	{
-		title: 'Eventos favoritados',
-		value: '—',
-		caption: 'Salve eventos para lembrar depois',
-		icon: Heart,
-	},
-	{
-		title: 'Comunidade',
-		value: 'Em breve',
-		caption: 'Experiências recomendadas para você',
-		icon: Bell,
-	},
-];
 
 const notificationPreferences = [
 	{
@@ -84,7 +69,13 @@ const timezones = [
 export default function PerfilPage() {
 	const { user } = useServerAuth();
 	const { toast } = useToast();
-	const [activeTab, setActiveTab] = useState<Tab>('perfil');
+	const searchParams = useSearchParams();
+	const tabParam = searchParams.get('tab') as Tab | null;
+	const [activeTab, setActiveTab] = useState<Tab>(
+		tabParam && ['perfil', 'preferencias', 'transacoes', 'ingressos'].includes(tabParam)
+			? tabParam
+			: 'perfil'
+	);
 	const [profileSaving, setProfileSaving] = useState(false);
 	const [passwordSaving, setPasswordSaving] = useState(false);
 	const [personalData, setPersonalData] = useState<PersonalData>({
@@ -97,6 +88,9 @@ export default function PerfilPage() {
 		new: '',
 		confirm: '',
 	});
+	const [tickets, setTickets] = useState<EventRegistration[]>([]);
+	const [loadingTickets, setLoadingTickets] = useState(false);
+	const [ticketsFetched, setTicketsFetched] = useState(false);
 
 	useEffect(() => {
 		if (!user) {
@@ -111,10 +105,54 @@ export default function PerfilPage() {
 		});
 	}, [user]);
 
+	useEffect(() => {
+		if (activeTab === 'ingressos' && user?.id && !ticketsFetched && !loadingTickets) {
+			const fetchTickets = async () => {
+				setLoadingTickets(true);
+				try {
+					const response = await fetch(`/api/user/tickets?userId=${user.id}`, {
+						credentials: 'include',
+					});
+					if (response.ok) {
+						const data = await response.json();
+						setTickets(data);
+					}
+				} catch (error) {
+					console.error('Error fetching tickets:', error);
+				} finally {
+					setLoadingTickets(false);
+					setTicketsFetched(true);
+				}
+			};
+			fetchTickets();
+		}
+	}, [activeTab, user?.id, ticketsFetched, loadingTickets]);
+
 	const memberSinceLabel = useMemo(() => {
 		// DirectusUser doesn't track date_created, so show generic message
 		return 'Membro ativo';
 	}, []);
+
+	const quickHighlights = useMemo(() => [
+		{
+			title: 'Ingressos ativos',
+			value: tickets.length.toString(),
+			caption: 'Veja seus próximos eventos',
+			icon: Ticket,
+		},
+		{
+			title: 'Eventos favoritados',
+			value: '—',
+			caption: 'Salve eventos para lembrar depois',
+			icon: Heart,
+		},
+		{
+			title: 'Comunidade',
+			value: 'Em breve',
+			caption: 'Experiências recomendadas para você',
+			icon: Bell,
+		},
+	], [tickets.length]);
 
 	const handleSavePersonalData = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
@@ -272,6 +310,8 @@ export default function PerfilPage() {
 			{[
 				{ id: 'perfil' as const, label: 'Informações Pessoais', icon: User },
 				{ id: 'preferencias' as const, label: 'Segurança & Preferências', icon: ShieldCheck },
+				{ id: 'ingressos' as const, label: 'Meus Ingressos', icon: Ticket },
+				{ id: 'transacoes' as const, label: 'Histórico de Transações', icon: Receipt },
 			].map((tab) => {
 				const Icon = tab.icon;
 				const isActive = activeTab === tab.id;
@@ -519,6 +559,22 @@ export default function PerfilPage() {
 							</div>
 						</div>
 						</div>
+					)}
+
+					{activeTab === 'ingressos' && (
+						<div className="space-y-6 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+							{loadingTickets ? (
+								<div className="flex items-center justify-center py-12">
+									<Loader2 className="size-8 animate-spin text-purple-600" />
+								</div>
+							) : (
+								<MyTicketsContent registrations={tickets} />
+							)}
+						</div>
+					)}
+
+					{activeTab === 'transacoes' && user?.id && (
+						<TransactionHistory userId={user.id} />
 					)}
 				</section>
 
