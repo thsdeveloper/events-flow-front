@@ -48,7 +48,7 @@ export default function Hero({ data }: HeroProps) {
 
 			<div
 				className={cn(
-					'relative container mx-auto px-4 sm:px-6 py-16 md:py-24 lg:py-32 flex flex-col gap-8 md:gap-16',
+					'relative max-w-7xl mx-auto px-4 sm:px-6 py-16 md:py-24 lg:py-32 flex flex-col gap-8 md:gap-16',
 					layout === 'image_center'
 						? 'items-center text-center'
 						: layout === 'image_left'

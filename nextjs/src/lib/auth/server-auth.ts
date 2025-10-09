@@ -108,7 +108,12 @@ export async function getServerAuth(): Promise<AuthState | null> {
 		// Check organizer profile to show pending requests for all users
 		const { organizerProfile, hasPendingRequest } = await checkIfUserIsOrganizer(client, user.id);
 		const organizerStatus = organizerProfile?.status;
-		const hasPendingOrganizerRequest = !hasOrganizerRole && (organizerStatus === 'pending' || hasPendingRequest);
+		// User has pending request if:
+		// - They don't have organizer role AND have a pending status/request
+		// - OR they have organizer role but no organizer profile (inconsistent state)
+		const hasPendingOrganizerRequest =
+			(!hasOrganizerRole && (organizerStatus === 'pending' || hasPendingRequest)) ||
+			(hasOrganizerRole && !organizerProfile);
 
 		return {
 			user,

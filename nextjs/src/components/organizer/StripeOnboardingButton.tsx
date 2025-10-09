@@ -7,12 +7,16 @@ interface StripeOnboardingButtonProps {
 	organizerId: string;
 	isComplete?: boolean;
 	className?: string;
+	successRedirectPath?: string;
+	refreshRedirectPath?: string;
 }
 
 export function StripeOnboardingButton({
 	organizerId,
 	isComplete = false,
 	className = '',
+	successRedirectPath,
+	refreshRedirectPath,
 }: StripeOnboardingButtonProps) {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -29,6 +33,8 @@ export function StripeOnboardingButton({
 				},
 				body: JSON.stringify({
 					organizer_id: organizerId,
+					success_redirect_path: successRedirectPath,
+					refresh_redirect_path: refreshRedirectPath,
 				}),
 			});
 

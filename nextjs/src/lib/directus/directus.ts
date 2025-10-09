@@ -21,7 +21,8 @@ const fetchRetry = async (count: number, ...args: Parameters<typeof fetch>) => {
 	if (count > 2 || response.status !== 429) return response;
 	console.warn(`[429] Too Many Requests (Attempt ${count + 1})`);
 	await sleep(500);
-	return fetchRetry(count + 1, ...args);
+	
+return fetchRetry(count + 1, ...args);
 };
 
 // Queue for rate-limited requests

@@ -78,7 +78,8 @@ export async function GET(request: NextRequest) {
 		return NextResponse.json(registrations);
 	} catch (error) {
 		console.error('Error fetching tickets:', error);
-		return NextResponse.json(
+		
+return NextResponse.json(
 			{ error: 'Failed to fetch tickets' },
 			{ status: 500 }
 		);

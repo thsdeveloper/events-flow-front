@@ -13,7 +13,7 @@ const Container = ({ children = null, className = '', as: Component = 'div', rol
 	if (!children) return null;
 
 	return (
-		<Component className={cn('container mx-auto px-4 sm:px-6', className)} role={role}>
+		<Component className={cn('max-w-7xl mx-auto px-4 sm:px-6', className)} role={role}>
 			{children}
 		</Component>
 	);

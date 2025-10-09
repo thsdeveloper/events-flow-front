@@ -13,8 +13,9 @@ import {
 } from '@/components/ui/navigation-menu';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
-import { ChevronDown, Menu, X, Ticket, Calendar, CalendarCheck } from 'lucide-react';
+import { ChevronDown, Menu, X, Ticket, Calendar, CalendarCheck, Building2, Clock } from 'lucide-react';
 import SearchModal from '@/components/ui/SearchModal';
 import Container from '@/components/ui/container';
 import { UserMenuDropdown } from '@/components/ui/user-menu-dropdown';
@@ -29,7 +30,7 @@ interface NavigationBarProps {
 const NavigationBar = forwardRef<HTMLElement, NavigationBarProps>(({ navigation, globals }, ref) => {
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
-	const { isOrganizer, isAuthenticated } = useServerAuth();
+	const { isOrganizer, isAuthenticated, hasPendingOrganizerRequest } = useServerAuth();
 
 	const directusURL = process.env.NEXT_PUBLIC_DIRECTUS_URL;
 	const lightLogoUrl = globals?.logo ? `${directusURL}/assets/${globals.logo}` : '/images/logo.svg';
@@ -40,7 +41,7 @@ const NavigationBar = forwardRef<HTMLElement, NavigationBarProps>(({ navigation,
 			setScrolled(window.scrollY > 20);
 		};
 		window.addEventListener('scroll', handleScroll);
-		
+
 return () => window.removeEventListener('scroll', handleScroll);
 	}, []);
 
@@ -157,6 +158,26 @@ return () => window.removeEventListener('scroll', handleScroll);
 										<span className="hidden xl:inline">Meus ingressos</span>
 									</Link>
 								</Button>
+								{!isOrganizer && (
+									<Button
+										size="sm"
+										asChild
+										className="gap-2 bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-md hover:shadow-lg transition-all duration-300 relative group hover:from-emerald-400 hover:to-green-500"
+									>
+										<Link href="/perfil/organizador">
+											<Building2 className="size-4 group-hover:scale-500 transition-transform" />
+											<span className="hidden xl:inline font-semibold">Vender ingressos</span>
+											{hasPendingOrganizerRequest && (
+												<Badge
+													className="absolute -top-1 -right-1 size-2 p-0 bg-amber-400 border-2 border-white dark:border-gray-900 rounded-full animate-pulse"
+													aria-label="Processo de ativação pendente"
+												>
+													<span className="sr-only">Pendente</span>
+												</Badge>
+											)}
+										</Link>
+									</Button>
+								)}
 							</>
 						)}
 						<UserMenuDropdown />
@@ -185,6 +206,25 @@ return () => window.removeEventListener('scroll', handleScroll);
 										<Ticket className="size-4" />
 									</Link>
 								</Button>
+								{!isOrganizer && (
+									<Button
+										size="icon"
+										asChild
+										className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white shadow-md hover:shadow-lg transition-all duration-300 relative group"
+									>
+										<Link href="/perfil/organizador" aria-label="Perfil de organizador">
+											<Building2 className="size-4 group-hover:scale-110 transition-transform" />
+											{hasPendingOrganizerRequest && (
+												<Badge
+													className="absolute -top-1 -right-1 size-2 p-0 bg-amber-400 border-2 border-white dark:border-gray-900 rounded-full animate-pulse"
+													aria-label="Processo de ativação pendente"
+												>
+													<span className="sr-only">Pendente</span>
+												</Badge>
+											)}
+										</Link>
+									</Button>
+								)}
 							</>
 						)}
 						<UserMenuDropdown />

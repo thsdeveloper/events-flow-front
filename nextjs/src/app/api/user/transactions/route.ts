@@ -54,7 +54,8 @@ export async function GET(request: NextRequest) {
 				sort: ['-date_created'],
 			}),
 		);
-		return NextResponse.json(transactions);
+		
+return NextResponse.json(transactions);
 	} catch (error) {
 		return NextResponse.json({ error: 'Failed to fetch transactions' }, { status: 500 });
 	}

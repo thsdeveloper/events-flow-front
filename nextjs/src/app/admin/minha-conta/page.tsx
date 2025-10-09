@@ -282,7 +282,7 @@ export default function AdminAccountPage() {
 	const tabs = [
 		{
 			id: 'perfil' as const,
-			label: 'Perfil de Organizador',
+			label: 'Perfil de organizador',
 			icon: Building2,
 		},
 		{

@@ -97,7 +97,7 @@ return date.toLocaleTimeString('pt-BR', {
 			<div className="absolute inset-0 bg-gradient-to-b from-white via-purple-50/30 to-white dark:from-slate-900 dark:via-purple-900/10 dark:to-slate-900 -z-10" />
 			<div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
 
-			<div className="container mx-auto px-4 sm:px-6">
+			<div className="max-w-7xl mx-auto px-4 sm:px-6">
 				{/* Header */}
 				<div className="text-center mb-16">
 					{headline && (

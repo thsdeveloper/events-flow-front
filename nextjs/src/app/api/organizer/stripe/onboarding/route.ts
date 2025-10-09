@@ -15,7 +15,11 @@ const directus = createDirectus<Schema>(directusUrl)
 
 export async function POST(req: Request) {
 	try {
-		const { organizer_id } = await req.json();
+		const {
+			organizer_id,
+			success_redirect_path: successRedirectPath,
+			refresh_redirect_path: refreshRedirectPath,
+		} = await req.json();
 
 		if (!organizer_id) {
 			return NextResponse.json(
@@ -41,6 +45,37 @@ export async function POST(req: Request) {
 
 		const organizer = organizers[0];
 		let accountId = organizer.stripe_account_id;
+
+		const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!;
+		const siteUrlObject = new URL(siteUrl);
+
+		const resolveRedirectPath = (path: unknown, fallback: string) => {
+			if (typeof path !== 'string' || path.trim() === '') {
+				return fallback;
+			}
+
+			try {
+				const parsed = new URL(path, siteUrlObject);
+
+				// Prevent open redirects by enforcing same-origin
+				if (parsed.origin !== siteUrlObject.origin) {
+					return fallback;
+				}
+
+				return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+			} catch {
+				return fallback;
+			}
+		};
+
+		const successPath = resolveRedirectPath(
+			successRedirectPath,
+			'/admin/minha-conta?setup=success'
+		);
+		const refreshPath = resolveRedirectPath(
+			refreshRedirectPath,
+			'/admin/minha-conta?setup=refresh'
+		);
 
 		// Create Stripe Connect account if doesn't exist
 		if (!accountId) {
@@ -68,8 +103,8 @@ export async function POST(req: Request) {
 		// Create account link for onboarding
 		const accountLink = await stripe.accountLinks.create({
 			account: accountId,
-			refresh_url: `${process.env.NEXT_PUBLIC_SITE_URL}/admin/minha-conta?setup=refresh`,
-			return_url: `${process.env.NEXT_PUBLIC_SITE_URL}/admin/minha-conta?setup=success`,
+			refresh_url: new URL(refreshPath, siteUrlObject).toString(),
+			return_url: new URL(successPath, siteUrlObject).toString(),
 			type: 'account_onboarding',
 		});
 
