@@ -1,13 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import TicketSelection, { TicketSelectionItem } from './TicketSelection';
+import InstallmentOptions from './InstallmentOptions';
 import type { EventTicket } from '@/types/directus-schema';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useCheckout } from '@/hooks/useCheckout';
+import { useInstallmentCheckout } from '@/hooks/useInstallmentCheckout';
 import { AlertCircle } from 'lucide-react';
 import {Alert, AlertDescription} from "@/components/ui/alert";
 
@@ -29,8 +32,10 @@ export default function EventCheckout({
   userId,
   defaultParticipantInfo,
 }: EventCheckoutProps) {
+  const router = useRouter();
   const [selectedTickets, setSelectedTickets] = useState<TicketSelectionItem[]>([]);
   const [showParticipantForm, setShowParticipantForm] = useState(false);
+  const [selectedInstallments, setSelectedInstallments] = useState<number | null>(1);
   const [participantInfo, setParticipantInfo] = useState({
     name: defaultParticipantInfo?.name || '',
     email: defaultParticipantInfo?.email || '',
@@ -38,12 +43,26 @@ export default function EventCheckout({
     document: '',
   });
 
-  const { createCheckoutSession, isLoading, error } = useCheckout({ eventId, userId });
+  const { createCheckoutSession, isLoading: isStripeLoading, error: stripeError } = useCheckout({ eventId, userId });
+  const { createInstallmentCheckout, isLoading: isInstallmentLoading, error: installmentError } = useInstallmentCheckout({
+    onSuccess: (data) => {
+      // Redirecionar para página de pagamento Pix
+      router.push(`/my-registrations/${data.registration_id}/pay`);
+    },
+  });
+
+  const isLoading = isStripeLoading || isInstallmentLoading;
+  const error = stripeError || installmentError;
 
   const handleTicketSelection = (tickets: TicketSelectionItem[]) => {
     setSelectedTickets(tickets);
     setShowParticipantForm(true);
   };
+
+  // Encontrar ticket selecionado e calcular total
+  const selectedTicket = selectedTickets[0]; // Assumindo 1 ticket por vez
+  const ticketData = tickets.find(t => t.id === selectedTicket?.ticketId);
+  const totalAmount = ticketData?.buyer_price ? ticketData.buyer_price * (selectedTicket?.quantity || 1) : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,8 +71,22 @@ export default function EventCheckout({
       return;
     }
 
+    if (!selectedTicket) {
+      return;
+    }
+
     try {
-      await createCheckoutSession(selectedTickets, participantInfo);
+      // Se parcelamento > 1, usar API de parcelamento
+      if (selectedInstallments && selectedInstallments > 1 && ticketData?.allow_installments) {
+        await createInstallmentCheckout(
+          selectedTicket,
+          selectedInstallments,
+          participantInfo
+        );
+      } else {
+        // Pagamento à vista via Stripe
+        await createCheckoutSession(selectedTickets, participantInfo);
+      }
     } catch (err) {
       // Erro já é tratado no hook
       console.error('Erro no checkout:', err);
@@ -62,6 +95,7 @@ export default function EventCheckout({
 
   const handleBackToTickets = () => {
     setShowParticipantForm(false);
+    setSelectedInstallments(1);
   };
 
   return (
@@ -169,6 +203,18 @@ export default function EventCheckout({
               </form>
             </CardContent>
           </Card>
+
+          {/* Opções de Parcelamento */}
+          {ticketData && (
+            <InstallmentOptions
+              totalAmount={totalAmount}
+              maxInstallments={ticketData.max_installments || 4}
+              minAmountForInstallments={ticketData.min_amount_for_installments || 50}
+              allowInstallments={ticketData.allow_installments || false}
+              selectedInstallments={selectedInstallments}
+              onInstallmentChange={setSelectedInstallments}
+            />
+          )}
         </div>
       )}
     </div>
