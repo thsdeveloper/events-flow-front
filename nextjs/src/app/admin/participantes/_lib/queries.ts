@@ -278,6 +278,20 @@ export async function performCheckIn(id: string, organizerId: string, client = d
     throw new Error('Check-in já foi realizado para este participante');
   }
 
+  // NOVA VALIDAÇÃO: Bloquear check-in se houver parcelas vencidas
+  if (participant.status === 'payment_overdue') {
+    const blockedReason = participant.blocked_reason || 'overdue_installments';
+
+    if (blockedReason === 'overdue_installments') {
+      throw new Error('Não é possível fazer check-in. Você possui parcelas vencidas. Regularize os pagamentos para fazer check-in.');
+    }
+  }
+
+  // NOVA VALIDAÇÃO: Verificar se pagamento ainda está pendente (não é parcelamento)
+  if (participant.status === 'pending' && participant.payment_status === 'pending') {
+    throw new Error('Não é possível fazer check-in. Aguardando confirmação de pagamento.');
+  }
+
   try {
     const updated = await client.request(
       updateItem('event_registrations', id, {
