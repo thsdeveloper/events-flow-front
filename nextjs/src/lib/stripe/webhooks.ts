@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import { stripe } from './server';
 import { createDirectus, rest, staticToken, readItem, readItems, updateItem, createItem } from '@directus/sdk';
+import type { Schema } from '@/types/directus-schema';
 
 // Create admin Directus client for webhook operations
 const getAdminClient = () => {
@@ -11,7 +12,7 @@ const getAdminClient = () => {
 		throw new Error('DIRECTUS_URL or DIRECTUS_ADMIN_TOKEN not configured');
 	}
 
-	return createDirectus(directusUrl).with(rest()).with(staticToken(adminToken));
+	return createDirectus<Schema>(directusUrl).with(rest()).with(staticToken(adminToken));
 };
 
 /**
@@ -32,7 +33,7 @@ async function logPaymentTransaction(
 		await client.request(
 			createItem('payment_transactions', {
 				stripe_event_id: eventId,
-				event_type: eventType,
+				event_type: eventType as any, // Allow any event type for flexibility
 				stripe_object_id: objectId,
 				amount: amount,
 				status: status,
@@ -65,6 +66,198 @@ export function verifyWebhookSignature(
 }
 
 /**
+ * Handle installment payment
+ */
+async function handleInstallmentPayment(
+	paymentIntent: Stripe.PaymentIntent,
+	installmentId: string,
+	client: any,
+): Promise<void> {
+	console.log(`[Webhook] Processing installment payment: ${installmentId}`);
+
+	try {
+		// Fetch installment with registration data
+		const installment = await (client.request as any)(
+			readItem('payment_installments', installmentId, {
+				fields: [
+					'*',
+					{
+						registration_id: [
+							'id',
+							'is_installment_payment',
+							'total_installments',
+							'participant_email',
+							'participant_name',
+							'ticket_type_id',
+							'quantity',
+						],
+					},
+				],
+			}),
+		);
+
+		if (!installment) {
+			console.error(`[Webhook] Installment ${installmentId} not found`);
+
+return;
+		}
+
+		// Check if installment already paid (idempotency)
+		if (installment.status === 'paid') {
+			console.log(`[Webhook] ⚠️  Installment ${installmentId} already marked as paid. Skipping.`);
+
+return;
+		}
+
+		// Update installment status
+		await (client.request as any)(
+			updateItem('payment_installments', installmentId, {
+				status: 'paid' as const,
+				paid_at: new Date().toISOString(),
+				payment_confirmed_at: new Date().toISOString(),
+			}),
+		);
+
+		console.log(`[Webhook] ✅ Installment ${installmentId} marked as paid`);
+
+		// Log transaction
+		await logPaymentTransaction(
+			`evt_${Date.now()}_${installmentId}`,
+			'payment_intent.succeeded',
+			paymentIntent.id,
+			installment.amount || 0,
+			'succeeded',
+			{
+				payment_intent: paymentIntent.id,
+				installment_id: installmentId,
+				installment_number: installment.installment_number,
+				total_installments: installment.total_installments,
+			},
+			typeof installment.registration_id === 'string'
+				? installment.registration_id
+				: installment.registration_id.id,
+		);
+
+		// Type guard for registration_id
+		if (typeof installment.registration_id === 'string') {
+			console.error('[Webhook] registration_id was not populated');
+
+return;
+		}
+
+		const registrationId = installment.registration_id.id;
+
+		// Fetch all installments for this registration
+		const allInstallments = await (client.request as any)(
+			readItems('payment_installments', {
+				filter: {
+					registration_id: { _eq: registrationId },
+				},
+				fields: ['id', 'status', 'due_date'],
+			}),
+		);
+
+		// Calculate installment statuses
+		const totalInstallments = allInstallments.length;
+		const paidInstallments = allInstallments.filter((i: any) => i.status === 'paid').length;
+		const overdueInstallments = allInstallments.filter((i: any) => i.status === 'overdue').length;
+		const pendingInstallments = allInstallments.filter((i: any) => i.status === 'pending').length;
+
+		console.log(
+			`[Webhook] Registration ${registrationId} installments: ${paidInstallments}/${totalInstallments} paid, ${overdueInstallments} overdue, ${pendingInstallments} pending`,
+		);
+
+		// Determine new registration status
+		let newStatus: string;
+		let newPaymentStatus: string;
+		let blockedReason: string | null = null;
+
+		if (paidInstallments === totalInstallments) {
+			// All installments paid
+			newStatus = 'confirmed';
+			newPaymentStatus = 'paid';
+			console.log(`[Webhook] All installments paid - confirming registration`);
+		} else if (overdueInstallments > 0) {
+			// Has overdue installments
+			newStatus = 'payment_overdue';
+			newPaymentStatus = 'pending';
+			blockedReason = 'overdue_installments';
+			console.log(`[Webhook] Has ${overdueInstallments} overdue installments - blocking registration`);
+		} else {
+			// Has pending (not overdue) installments
+			newStatus = 'partial_payment';
+			newPaymentStatus = 'pending';
+			console.log(`[Webhook] Has ${pendingInstallments} pending installments - partial payment`);
+		}
+
+		// Update registration
+		await client.request(
+			updateItem('event_registrations', registrationId, {
+				status: newStatus,
+				payment_status: newPaymentStatus,
+				blocked_reason: blockedReason,
+				installment_plan_status: paidInstallments === totalInstallments ? 'completed' : 'active',
+			}),
+		);
+
+		console.log(`[Webhook] ✅ Registration ${registrationId} updated to status: ${newStatus}`);
+
+		// If first installment and registration was pending, generate ticket code
+		if (installment.installment_number === 1 && paidInstallments === 1) {
+			const timestamp = Date.now().toString(36).toUpperCase();
+			const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+			const ticketCode = `TKT-${timestamp}-${random}`;
+
+			await client.request(
+				updateItem('event_registrations', registrationId, {
+					ticket_code: ticketCode,
+					stripe_payment_intent_id: paymentIntent.id,
+				}),
+			);
+
+			console.log(`[Webhook] ✅ First installment paid - ticket code generated: ${ticketCode}`);
+
+			// Increment quantity_sold on ticket (only for first installment)
+			if (installment.registration_id.ticket_type_id) {
+				try {
+					const ticketId =
+						typeof installment.registration_id.ticket_type_id === 'object'
+							? installment.registration_id.ticket_type_id.id
+							: installment.registration_id.ticket_type_id;
+
+					const ticket = await client.request(
+						readItem('event_tickets', ticketId, {
+							fields: ['id', 'quantity_sold', 'title'],
+						}),
+					);
+
+					const currentSold = ticket.quantity_sold || 0;
+					const newSold = currentSold + (installment.registration_id.quantity || 1);
+
+					await client.request(
+						updateItem('event_tickets', ticketId, {
+							quantity_sold: newSold,
+						}),
+					);
+
+					console.log(
+						`[Webhook] Ticket "${ticket.title}" quantity_sold: ${currentSold} → ${newSold}`,
+					);
+				} catch (error: any) {
+					console.error('[Webhook] Error updating ticket quantity_sold:', error);
+				}
+			}
+		}
+
+		// TODO: Send email notification
+		console.log(`[Webhook] TODO: Send installment payment confirmation email`);
+	} catch (error: any) {
+		console.error(`[Webhook] Error handling installment payment ${installmentId}:`, error);
+		throw error;
+	}
+}
+
+/**
  * Handle payment_intent.succeeded event
  */
 export async function handlePaymentIntentSucceeded(
@@ -75,11 +268,21 @@ export async function handlePaymentIntentSucceeded(
 	try {
 		const client = getAdminClient();
 
-		// Get registration_ids from metadata
+		// Check if this is an installment payment
+		const installmentId = paymentIntent.metadata.installment_id;
+
+		if (installmentId) {
+			// Handle installment payment
+			await handleInstallmentPayment(paymentIntent, installmentId, client);
+
+return;
+		}
+
+		// Get registration_ids from metadata (legacy/non-installment flow)
 		const registrationIds = paymentIntent.metadata.registration_ids?.split(',') || [];
 
 		if (registrationIds.length === 0) {
-			console.warn('[Webhook] No registration_ids found in payment_intent metadata');
+			console.warn('[Webhook] No registration_ids or installment_id found in payment_intent metadata');
 			// Log transaction even without registration_ids
 			await logPaymentTransaction(
 				`evt_${Date.now()}`, // Generate temporary event ID
@@ -89,7 +292,7 @@ export async function handlePaymentIntentSucceeded(
 				'succeeded',
 				paymentIntent,
 			);
-			
+
 return;
 		}
 
