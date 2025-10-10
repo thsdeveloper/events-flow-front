@@ -1,6 +1,5 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Info } from 'lucide-react';
@@ -75,64 +74,63 @@ export default function InstallmentOptions({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Forma de Pagamento</CardTitle>
-        <CardDescription>Escolha como deseja pagar via Pix</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <RadioGroup
-          value={selectedInstallments?.toString() || '1'}
-          onValueChange={(value) => onInstallmentChange(parseInt(value, 10))}
-        >
-          {installmentOptions.map((option) => (
-            <div
-              key={option.installments}
-              className="flex items-center space-x-3 rounded-lg border p-4 hover:bg-accent cursor-pointer"
-              onClick={() => onInstallmentChange(option.installments)}
-            >
-              <RadioGroupItem value={option.installments.toString()} id={`installment-${option.installments}`} />
-              <Label
-                htmlFor={`installment-${option.installments}`}
-                className="flex-1 cursor-pointer"
-              >
-                {option.installments === 1 ? (
-                  <div className="space-y-1">
-                    <div className="font-semibold">À vista - Pix</div>
-                    <div className="text-sm text-muted-foreground">
-                      R$ {option.total_amount.toFixed(2)}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    <div className="font-semibold">
-                      {option.installments}x de R$ {option.installment_amount.toFixed(2)}
-                    </div>
-                    {option.first_installment_amount && (
-                      <div className="text-xs text-muted-foreground">
-                        1ª parcela: R$ {option.first_installment_amount.toFixed(2)}
-                      </div>
-                    )}
-                    <div className="text-sm text-muted-foreground">
-                      Total: R$ {option.total_amount.toFixed(2)} (via Pix)
-                    </div>
-                  </div>
-                )}
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-lg font-semibold mb-1">Forma de Pagamento</h3>
+        <p className="text-sm text-muted-foreground">Escolha como deseja pagar via Pix</p>
+      </div>
 
-        {selectedInstallments && selectedInstallments > 1 && (
-          <Alert className="mt-4">
-            <Info className="size-4" />
-            <AlertDescription className="text-sm">
-              Você pagará a primeira parcela agora via Pix. As demais parcelas vencerão mensalmente
-              e você receberá lembretes por e-mail.
-            </AlertDescription>
-          </Alert>
-        )}
-      </CardContent>
-    </Card>
+      <RadioGroup
+        value={selectedInstallments?.toString() || '1'}
+        onValueChange={(value) => onInstallmentChange(parseInt(value, 10))}
+      >
+        {installmentOptions.map((option) => (
+          <div
+            key={option.installments}
+            className="flex items-center space-x-3 rounded-lg border p-4 hover:bg-accent cursor-pointer transition-colors"
+            onClick={() => onInstallmentChange(option.installments)}
+          >
+            <RadioGroupItem value={option.installments.toString()} id={`installment-${option.installments}`} />
+            <Label
+              htmlFor={`installment-${option.installments}`}
+              className="flex-1 cursor-pointer"
+            >
+              {option.installments === 1 ? (
+                <div className="space-y-1">
+                  <div className="font-semibold">À vista - Pix</div>
+                  <div className="text-sm text-muted-foreground">
+                    R$ {option.total_amount.toFixed(2)}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <div className="font-semibold">
+                    {option.installments}x de R$ {option.installment_amount.toFixed(2)}
+                  </div>
+                  {option.first_installment_amount && (
+                    <div className="text-xs text-muted-foreground">
+                      1ª parcela: R$ {option.first_installment_amount.toFixed(2)}
+                    </div>
+                  )}
+                  <div className="text-sm text-muted-foreground">
+                    Total: R$ {option.total_amount.toFixed(2)} (via Pix)
+                  </div>
+                </div>
+              )}
+            </Label>
+          </div>
+        ))}
+      </RadioGroup>
+
+      {selectedInstallments && selectedInstallments > 1 && (
+        <Alert>
+          <Info className="size-4" />
+          <AlertDescription className="text-sm">
+            Você pagará a primeira parcela agora via Pix. As demais parcelas vencerão mensalmente
+            e você receberá lembretes por e-mail.
+          </AlertDescription>
+        </Alert>
+      )}
+    </div>
   );
 }

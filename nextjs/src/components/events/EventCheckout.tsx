@@ -129,62 +129,78 @@ export default function EventCheckout({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome Completo *</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={participantInfo.name}
-                    onChange={(e) =>
-                      setParticipantInfo({ ...participantInfo, name: e.target.value })
-                    }
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">E-mail *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={participantInfo.email}
-                    onChange={(e) =>
-                      setParticipantInfo({ ...participantInfo, email: e.target.value })
-                    }
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Telefone</Label>
+                    <Label htmlFor="name">Nome Completo *</Label>
                     <Input
-                      id="phone"
-                      type="tel"
-                      value={participantInfo.phone}
-                      onChange={(e) =>
-                        setParticipantInfo({ ...participantInfo, phone: e.target.value })
-                      }
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="document">CPF</Label>
-                    <Input
-                      id="document"
+                      id="name"
                       type="text"
-                      value={participantInfo.document}
+                      value={participantInfo.name}
                       onChange={(e) =>
-                        setParticipantInfo({ ...participantInfo, document: e.target.value })
+                        setParticipantInfo({ ...participantInfo, name: e.target.value })
                       }
+                      required
                       disabled={isLoading}
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">E-mail *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={participantInfo.email}
+                      onChange={(e) =>
+                        setParticipantInfo({ ...participantInfo, email: e.target.value })
+                      }
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Telefone</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={participantInfo.phone}
+                        onChange={(e) =>
+                          setParticipantInfo({ ...participantInfo, phone: e.target.value })
+                        }
+                        disabled={isLoading}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="document">CPF</Label>
+                      <Input
+                        id="document"
+                        type="text"
+                        value={participantInfo.document}
+                        onChange={(e) =>
+                          setParticipantInfo({ ...participantInfo, document: e.target.value })
+                        }
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
                 </div>
+
+                {/* Opções de Parcelamento dentro do formulário */}
+                {ticketData && (
+                  <div className="border-t pt-6">
+                    <InstallmentOptions
+                      totalAmount={totalAmount}
+                      maxInstallments={ticketData.max_installments || 4}
+                      minAmountForInstallments={ticketData.min_amount_for_installments || 50}
+                      allowInstallments={ticketData.allow_installments || false}
+                      selectedInstallments={selectedInstallments}
+                      onInstallmentChange={setSelectedInstallments}
+                    />
+                  </div>
+                )}
 
                 <div className="flex gap-4 pt-4">
                   <Button
@@ -197,24 +213,12 @@ export default function EventCheckout({
                     Voltar
                   </Button>
                   <Button type="submit" disabled={isLoading} className="flex-1">
-                    {isLoading ? 'Processando...' : 'Ir para Pagamento'}
+                    {isLoading ? 'Processando...' : 'Finalizar Compra'}
                   </Button>
                 </div>
               </form>
             </CardContent>
           </Card>
-
-          {/* Opções de Parcelamento */}
-          {ticketData && (
-            <InstallmentOptions
-              totalAmount={totalAmount}
-              maxInstallments={ticketData.max_installments || 4}
-              minAmountForInstallments={ticketData.min_amount_for_installments || 50}
-              allowInstallments={ticketData.allow_installments || false}
-              selectedInstallments={selectedInstallments}
-              onInstallmentChange={setSelectedInstallments}
-            />
-          )}
         </div>
       )}
     </div>
