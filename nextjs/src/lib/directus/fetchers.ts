@@ -282,6 +282,9 @@ export const fetchEventBySlug = async (slug: string) => {
 							'max_quantity_per_purchase',
 							'visibility',
 							'sort',
+							'allow_installments',
+							'max_installments',
+							'min_amount_for_installments',
 						]
 					},
 				],
