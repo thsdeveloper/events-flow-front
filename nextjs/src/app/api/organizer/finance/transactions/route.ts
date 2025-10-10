@@ -43,10 +43,10 @@ export async function GET(request: NextRequest) {
 		const [transactions, totalResult, statusAggregations] = await Promise.all([
 			client.request(
 				readItems('payment_transactions', {
-					filter,
+					filter: filter as any,
 					page,
 					limit,
-					sort: [sortValue],
+					sort: [sortValue] as any,
 					fields: [
 						'id',
 						'stripe_event_id',
@@ -84,13 +84,13 @@ export async function GET(request: NextRequest) {
 			),
 			client.request(
 				aggregate('payment_transactions', {
-					filter,
+					filter: filter as any,
 					aggregate: { count: '*' },
 				}),
 			),
 			client.request(
 				aggregate('payment_transactions', {
-					filter,
+					filter: filter as any,
 					groupBy: ['status'],
 					aggregate: {
 						count: '*',

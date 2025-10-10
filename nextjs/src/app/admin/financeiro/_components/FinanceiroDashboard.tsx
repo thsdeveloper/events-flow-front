@@ -3,6 +3,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Download, RefreshCcw } from 'lucide-react';
 import type { OrganizerProfile } from '@/lib/auth/server-auth';
+import type {
+	EventsOption,
+	OverviewMetrics,
+	TransactionsResult,
+	PayoutSummary,
+	PaginationState,
+} from '@/lib/finance/server-fetchers';
 import { Button } from '@/components/ui/button';
 import {
 	Card,
@@ -14,33 +21,8 @@ import {
 import FinanceOverview from './FinanceOverview';
 import FinanceFilters, { type AppliedFilters, type FiltersDraft } from './FinanceFilters';
 import TransactionsTable, { type TransactionRow, type TransactionSort } from './TransactionsTable';
-import PayoutHistory, { type PayoutSummary } from './PayoutHistory';
+import PayoutHistory from './PayoutHistory';
 import StripeAccountStatus from './StripeAccountStatus';
-
-type OverviewMetrics = {
-	gross: number;
-	serviceFees: number;
-	net: number;
-	ticketsSold: number;
-	totalTransactions: number;
-	averageTicket: number;
-	pendingCount: number;
-	refundedCount: number;
-	allRegistrations: number;
-	allGross: number;
-};
-
-type PaginationState = {
-	page: number;
-	limit: number;
-	total: number;
-	pageCount: number;
-};
-
-type EventsOption = {
-	id: string;
-	title: string;
-};
 
 const DEFAULT_PAGINATION: PaginationState = {
 	page: 1,
@@ -147,15 +129,25 @@ function buildExportPayload(filters: AppliedFilters) {
 
 interface FinanceiroDashboardProps {
 	organizer: OrganizerProfile;
+	initialEvents: EventsOption[];
+	initialOverview: OverviewMetrics;
+	initialTransactions: TransactionsResult;
+	initialPayouts: PayoutSummary;
 }
 
-export default function FinanceiroDashboard({ organizer }: FinanceiroDashboardProps) {
+export default function FinanceiroDashboard({
+	organizer,
+	initialEvents,
+	initialOverview,
+	initialTransactions,
+	initialPayouts,
+}: FinanceiroDashboardProps) {
 	const [filters, setFilters] = useState<AppliedFilters>(defaultFilters);
-	const [transactions, setTransactions] = useState<TransactionRow[]>([]);
-	const [pagination, setPagination] = useState<PaginationState>(DEFAULT_PAGINATION);
-	const [events, setEvents] = useState<EventsOption[]>([]);
-	const [metrics, setMetrics] = useState<OverviewMetrics | null>(null);
-	const [payoutSummary, setPayoutSummary] = useState<PayoutSummary | null>(null);
+	const [transactions, setTransactions] = useState<TransactionRow[]>(initialTransactions.data);
+	const [pagination, setPagination] = useState<PaginationState>(initialTransactions.pagination);
+	const [events, setEvents] = useState<EventsOption[]>(initialEvents);
+	const [metrics, setMetrics] = useState<OverviewMetrics | null>(initialOverview);
+	const [payoutSummary, setPayoutSummary] = useState<PayoutSummary | null>(initialPayouts);
 	const [transactionsLoading, setTransactionsLoading] = useState(false);
 	const [overviewLoading, setOverviewLoading] = useState(false);
 	const [payoutLoading, setPayoutLoading] = useState(false);
@@ -165,45 +157,8 @@ export default function FinanceiroDashboard({ organizer }: FinanceiroDashboardPr
 		field: 'date',
 		direction: 'desc',
 	});
-	const isMounted = useRef(true);
-
-	useEffect(() => {
-		isMounted.current = true;
-
-		return () => {
-			isMounted.current = false;
-		};
-	}, []);
 
 	const appliedDateWindow = useMemo(() => resolveDateWindow(filters), [filters]);
-
-	useEffect(() => {
-		let active = true;
-
-		const loadEvents = async () => {
-			try {
-				const data = await fetchJson<{ data: EventsOption[] }>(
-					'/api/organizer/finance/events',
-				);
-
-				if (!active || !isMounted.current) {
-					return;
-				}
-
-				setEvents(data.data ?? []);
-			} catch (error) {
-				if (!isAbortError(error) && active) {
-					console.error('Erro ao buscar eventos:', error);
-				}
-			}
-		};
-
-		void loadEvents();
-
-		return () => {
-			active = false;
-		};
-	}, []);
 
 	useEffect(() => {
 		const controller = new AbortController();
@@ -223,7 +178,7 @@ export default function FinanceiroDashboard({ organizer }: FinanceiroDashboardPr
 
 		const loadOverview = async () => {
 			try {
-				if (!isMounted.current || !active) {
+				if (!active) {
 					return;
 				}
 
@@ -232,7 +187,7 @@ export default function FinanceiroDashboard({ organizer }: FinanceiroDashboardPr
 					'/api/organizer/finance/overview?' + params.toString(),
 				);
 
-				if (!active || !isMounted.current) {
+				if (!active) {
 					return;
 				}
 
@@ -242,7 +197,7 @@ export default function FinanceiroDashboard({ organizer }: FinanceiroDashboardPr
 					console.error('Erro ao carregar overview financeiro:', error);
 				}
 			} finally {
-				if (active && isMounted.current) {
+				if (active) {
 					setOverviewLoading(false);
 				}
 			}
@@ -290,7 +245,7 @@ export default function FinanceiroDashboard({ organizer }: FinanceiroDashboardPr
 
 		const loadTransactions = async () => {
 			try {
-				if (!isMounted.current || !active) {
+				if (!active) {
 					return;
 				}
 
@@ -302,7 +257,7 @@ export default function FinanceiroDashboard({ organizer }: FinanceiroDashboardPr
 					pagination: PaginationState;
 				}>('/api/organizer/finance/transactions?' + params.toString());
 
-				if (!active || !isMounted.current) {
+				if (!active) {
 					return;
 				}
 
@@ -319,7 +274,7 @@ export default function FinanceiroDashboard({ organizer }: FinanceiroDashboardPr
 					setPagination(DEFAULT_PAGINATION);
 				}
 			} finally {
-				if (active && isMounted.current) {
+				if (active) {
 					setTransactionsLoading(false);
 				}
 			}
@@ -342,46 +297,18 @@ export default function FinanceiroDashboard({ organizer }: FinanceiroDashboardPr
 
 	const loadPayouts = useCallback(async () => {
 		try {
-			if (!isMounted.current) {
-				return;
-			}
-
 			setPayoutLoading(true);
 			const data = await fetchJson<PayoutSummary>('/api/organizer/finance/payouts');
-
-			if (!isMounted.current) {
-				return;
-			}
-
 			setPayoutSummary(data);
 		} catch (error) {
-			if (!isAbortError(error) && isMounted.current) {
+			if (!isAbortError(error)) {
 				console.error('Erro ao carregar repasses:', error);
 				setPayoutSummary(null);
 			}
 		} finally {
-			if (isMounted.current) {
-				setPayoutLoading(false);
-			}
+			setPayoutLoading(false);
 		}
 	}, []);
-
-	useEffect(() => {
-		let active = true;
-
-		const load = async () => {
-			if (!active) {
-				return;
-			}
-			await loadPayouts();
-		};
-
-		void load();
-
-		return () => {
-			active = false;
-		};
-	}, [loadPayouts]);
 
 	const handleFiltersApply = (draft: FiltersDraft) => {
 		setFilters({

@@ -139,11 +139,11 @@ export async function POST(request: NextRequest) {
 		while (true) {
 			const batch = await client.request(
 				readItems('payment_transactions', {
-					filter,
+					filter: filter as any,
 					page,
 					limit: EXPORT_BATCH_SIZE,
 					sort: ['-date_created'],
-					fields,
+					fields: fields as any,
 				}),
 			);
 
