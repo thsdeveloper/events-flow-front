@@ -13,6 +13,7 @@ import {
 	Building2,
 	Ticket,
 	UserCog,
+	Wallet,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -47,6 +48,11 @@ const navigationItems = [
 		name: 'Análises',
 		href: '/admin/analises',
 		icon: BarChart3,
+	},
+	{
+		name: 'Financeiro',
+		href: '/admin/financeiro',
+		icon: Wallet,
 	},
 	{
 		name: 'Configurações',
