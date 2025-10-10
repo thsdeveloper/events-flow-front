@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       readItem('event_tickets', validatedData.ticket_id, {
         fields: [
           '*',
-          'event_id.*',
+          { event_id: ['*'] },
         ],
       })
     );
@@ -74,8 +74,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const totalAmount = ticket.buyer_price * validatedData.quantity;
-    const minAmount = ticket.min_amount_for_installments || 50;
+    const totalAmount = (ticket.buyer_price ?? 0) * validatedData.quantity;
+    const minAmount = ticket.min_amount_for_installments ?? 50;
 
     if (totalAmount < minAmount) {
       return NextResponse.json(
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
         total_installments: validatedData.installments,
         amount,
         due_date: dueDate.toISOString().split('T')[0],
-        status: 'pending',
+        status: 'pending' as const,
       });
     }
 
