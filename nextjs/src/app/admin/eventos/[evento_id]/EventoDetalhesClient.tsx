@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, Edit, Users, UserCheck, Settings, Calendar, MapPin, Globe, DollarSign, Tag, Star, Ticket, Plus, TrendingUp, AlertCircle, CheckCircle, XCircle, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit, Users, UserCheck, Settings, Calendar, MapPin, Globe, DollarSign, Tag, Star, Ticket, Plus, TrendingUp, AlertCircle, CheckCircle, XCircle, Trash2, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 import { deleteItem } from '@directus/sdk';
 import { useDirectusClient } from '@/hooks/useDirectusClient';
@@ -257,6 +257,15 @@ return;
 					</div>
 				</div>
 				<div className="flex items-center gap-2">
+					<Link
+						href={`/eventos/${event.slug}`}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+					>
+						<ExternalLink className="size-4" />
+						Ver Página Pública
+					</Link>
 					<Link
 						href={`/admin/eventos/${evento_id}/editar`}
 						className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors"
