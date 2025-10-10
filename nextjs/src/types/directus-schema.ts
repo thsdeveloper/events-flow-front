@@ -282,7 +282,7 @@ export interface EventConfigurations {
 export interface EventRegistration {
 	/** @primaryKey */
 	id: string;
-	status?: 'confirmed' | 'pending' | 'cancelled' | 'checked_in';
+	status?: 'confirmed' | 'pending' | 'partial_payment' | 'payment_overdue' | 'cancelled' | 'checked_in';
 	sort?: number | null;
 	date_created?: string | null;
 	date_updated?: string | null;
@@ -330,6 +330,16 @@ export interface EventRegistration {
 	cancelled_reason?: string | null;
 	/** @description Observações internas sobre o participante */
 	notes?: string | null;
+	/** @description Esta inscrição é um pagamento parcelado? */
+	is_installment_payment?: boolean | null;
+	/** @description Total de parcelas (ex: 4) */
+	total_installments?: number | null;
+	/** @description Status do plano de parcelamento */
+	installment_plan_status?: 'active' | 'completed' | 'defaulted' | null;
+	/** @description Razão do bloqueio (ex: overdue_installments) */
+	blocked_reason?: string | null;
+	/** @description Parcelas de pagamento relacionadas */
+	installments?: PaymentInstallment[] | string[];
 }
 
 export interface Event {
@@ -418,6 +428,12 @@ export interface EventTicket {
 	max_quantity_per_purchase?: number | null;
 	/** @description Visibilidade do ingresso */
 	visibility?: 'public' | 'invited_only' | 'manual' | null;
+	/** @description Permitir parcelamento via Pix para este ingresso? */
+	allow_installments?: boolean | null;
+	/** @description Máximo de parcelas permitidas (ex: 4) */
+	max_installments?: number | null;
+	/** @description Valor mínimo do ingresso para permitir parcelamento */
+	min_amount_for_installments?: number | null;
 }
 
 export interface FormField {
@@ -647,6 +663,35 @@ export interface Page {
 	user_updated?: DirectusUser | string | null;
 	/** @description Create and arrange different content blocks (like text, images, or videos) to build your page. */
 	blocks?: PageBlock[] | string[];
+}
+
+export interface PaymentInstallment {
+	/** @primaryKey */
+	id: string;
+	date_created?: string | null;
+	date_updated?: string | null;
+	/** @description Inscrição/registro relacionado @required */
+	registration_id: EventRegistration | string;
+	/** @description Número da parcela (1, 2, 3, 4) @required */
+	installment_number: number;
+	/** @description Total de parcelas (ex: 4) @required */
+	total_installments: number;
+	/** @description Valor desta parcela em reais @required */
+	amount: number;
+	/** @description Data de vencimento da parcela @required */
+	due_date: string;
+	/** @description Status do pagamento desta parcela @required */
+	status: 'pending' | 'paid' | 'overdue' | 'cancelled';
+	/** @description ID do Payment Intent no Stripe */
+	stripe_payment_intent_id?: string | null;
+	/** @description QR Code Pix em base64 para exibição */
+	pix_qr_code_base64?: string | null;
+	/** @description Código Pix copia e cola */
+	pix_copy_paste?: string | null;
+	/** @description Data e hora em que a parcela foi paga */
+	paid_at?: string | null;
+	/** @description Data e hora da confirmação do pagamento */
+	payment_confirmed_at?: string | null;
 }
 
 export interface PaymentTransaction {
@@ -1191,6 +1236,7 @@ export interface Schema {
 	organizers: Organizer[];
 	page_blocks: PageBlock[];
 	pages: Page[];
+	payment_installments: PaymentInstallment[];
 	payment_transactions: PaymentTransaction[];
 	posts: Post[];
 	redirects: Redirect[];
@@ -1252,6 +1298,7 @@ export enum CollectionNames {
 	organizers = 'organizers',
 	page_blocks = 'page_blocks',
 	pages = 'pages',
+	payment_installments = 'payment_installments',
 	payment_transactions = 'payment_transactions',
 	posts = 'posts',
 	redirects = 'redirects',
