@@ -151,6 +151,25 @@ export interface BlockHero {
 	user_updated?: DirectusUser | string | null;
 }
 
+export interface BlockHeroSlide {
+	/** @primaryKey */
+	id: string;
+	sort?: number | null;
+	/** @description Texto pequeno acima do headline (ex: 'Lançamento', 'Novidade') */
+	tagline?: string | null;
+	/** @description Título principal do slide @required */
+	headline: string;
+	/** @description Descrição do slide */
+	description?: string | null;
+	/** @description Imagem de fundo ou destaque do slide */
+	image?: DirectusFile | string | null;
+	/** @description Grupo de botões de ação */
+	button_group?: BlockButtonGroup | string | null;
+	date_created?: string | null;
+	user_created?: DirectusUser | string | null;
+	block_hero_id?: BlockHero | string | null;
+}
+
 export interface BlockPost {
 	/** @primaryKey */
 	id: string;
@@ -305,6 +324,12 @@ export interface EventRegistration {
 	stripe_refund_id?: string | null;
 	/** @description Método de pagamento usado */
 	payment_method?: 'card' | 'pix' | 'boleto' | 'free' | null;
+	/** @description Data e hora do cancelamento da inscrição */
+	cancelled_at?: string | null;
+	/** @description Motivo do cancelamento da inscrição */
+	cancelled_reason?: string | null;
+	/** @description Observações internas sobre o participante */
+	notes?: string | null;
 }
 
 export interface Event {
@@ -1146,6 +1171,7 @@ export interface Schema {
 	block_gallery: BlockGallery[];
 	block_gallery_items: BlockGalleryItem[];
 	block_hero: BlockHero[];
+	block_hero_slides: BlockHeroSlide[];
 	block_posts: BlockPost[];
 	block_pricing: BlockPricing[];
 	block_pricing_cards: BlockPricingCard[];
@@ -1206,6 +1232,7 @@ export enum CollectionNames {
 	block_gallery = 'block_gallery',
 	block_gallery_items = 'block_gallery_items',
 	block_hero = 'block_hero',
+	block_hero_slides = 'block_hero_slides',
 	block_posts = 'block_posts',
 	block_pricing = 'block_pricing',
 	block_pricing_cards = 'block_pricing_cards',

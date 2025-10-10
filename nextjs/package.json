@@ -33,6 +33,7 @@
 		"@radix-ui/react-tooltip": "^1.1.8",
 		"@stripe/stripe-js": "^8.0.0",
 		"@tailwindcss/typography": "^0.5.16",
+		"@tanstack/react-table": "^8.21.3",
 		"@types/qrcode": "^1.5.5",
 		"@types/react": "^19.1.0",
 		"@types/react-dom": "^19.1.1",

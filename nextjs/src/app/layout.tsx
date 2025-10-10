@@ -4,6 +4,7 @@ import { ReactNode } from 'react';
 import { Metadata } from 'next';
 
 import { ThemeProvider } from '@/components/ui/ThemeProvider';
+import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { fetchSiteData } from '@/lib/directus/fetchers';
 import { getDirectusAssetURL } from '@/lib/directus/directus-utils';
@@ -37,6 +38,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 				<ThemeProvider>
 					<AuthProvider>
 						{children}
+						<Toaster />
 					</AuthProvider>
 				</ThemeProvider>
 			</body>

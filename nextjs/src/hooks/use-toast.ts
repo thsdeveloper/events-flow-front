@@ -1,22 +1,25 @@
 import * as React from 'react';
 
-type ToastActionElement = React.ReactElement<any>;
+import { type ToastActionElement, type ToastProps } from '@/components/ui/toast';
 
-export interface Toast {
+const TOAST_LIMIT = 1;
+const TOAST_REMOVE_DELAY = 1_000;
+export const TOAST_DEFAULT_DURATION = 5_000;
+
+type ToasterToast = ToastProps & {
 	id: string;
 	title?: React.ReactNode;
 	description?: React.ReactNode;
 	action?: ToastActionElement;
-	variant?: 'default' | 'destructive';
-}
+};
 
 interface State {
-	toasts: Toast[];
+	toasts: ToasterToast[];
 }
 
 type Action =
-	| { type: 'ADD_TOAST'; toast: Toast }
-	| { type: 'UPDATE_TOAST'; toast: Partial<Toast> }
+	| { type: 'ADD_TOAST'; toast: ToasterToast }
+	| { type: 'UPDATE_TOAST'; toast: Partial<ToasterToast> & Pick<ToasterToast, 'id'> }
 	| { type: 'DISMISS_TOAST'; toastId?: string }
 	| { type: 'REMOVE_TOAST'; toastId?: string };
 
@@ -41,7 +44,7 @@ const addToRemoveQueue = (toastId: string) => {
 			type: 'REMOVE_TOAST',
 			toastId: toastId,
 		});
-	}, 1000000);
+	}, TOAST_REMOVE_DELAY);
 
 	toastTimeouts.set(toastId, timeout);
 };
@@ -51,7 +54,7 @@ export const reducer = (state: State, action: Action): State => {
 		case 'ADD_TOAST':
 			return {
 				...state,
-				toasts: [action.toast, ...state.toasts].slice(0, 1),
+				toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
 			};
 
 		case 'UPDATE_TOAST':
@@ -111,7 +114,9 @@ function dispatch(action: Action) {
 	});
 }
 
-interface ToastOptions extends Omit<Toast, 'id'> {}
+export type Toast = ToasterToast;
+
+type ToastOptions = Omit<ToasterToast, 'id'>;
 
 function toast(props: ToastOptions) {
 	const id = genId();
@@ -123,11 +128,21 @@ function toast(props: ToastOptions) {
 		});
 	const dismiss = () => dispatch({ type: 'DISMISS_TOAST', toastId: id });
 
+	const onOpenChange = (open: boolean) => {
+		props.onOpenChange?.(open);
+		if (!open) {
+			dismiss();
+		}
+	};
+
 	dispatch({
 		type: 'ADD_TOAST',
 		toast: {
 			...props,
 			id,
+			open: true,
+			duration: props.duration ?? TOAST_DEFAULT_DURATION,
+			onOpenChange,
 		},
 	});
 
@@ -150,7 +165,7 @@ return () => {
 				listeners.splice(index, 1);
 			}
 		};
-	}, [state]);
+	}, []);
 
 	return {
 		...state,

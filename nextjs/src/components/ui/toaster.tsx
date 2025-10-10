@@ -8,13 +8,13 @@ import {
 	ToastTitle,
 	ToastViewport,
 } from '@/components/ui/toast';
-import { useToast } from '@/hooks/use-toast';
+import { TOAST_DEFAULT_DURATION, useToast } from '@/hooks/use-toast';
 
 export function Toaster() {
 	const { toasts } = useToast();
 
 	return (
-		<ToastProvider>
+		<ToastProvider duration={TOAST_DEFAULT_DURATION} swipeDirection="right">
 			{toasts.map(function ({ id, title, description, action, ...props }) {
 				return (
 					<Toast key={id} {...props}>
