@@ -28,7 +28,7 @@ export default async function AdminLayout({
 
 				{/* Page Content */}
 				<main className="p-6">
-					<div className="max-w-7xl mx-auto">
+					<div className="mx-auto">
 						{children}
 					</div>
 				</main>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useImperativeHandle, forwardRef } from 'react';
+import { useState, useRef, useImperativeHandle, forwardRef, useEffect } from 'react';
 import { Upload, X, ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 
@@ -27,14 +27,24 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
 }, ref) => {
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [preview, setPreview] = useState<string | null>(
-		value ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${value}` : null
+		value && value !== 'local-file'
+			? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${value}`
+			: null
 	);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	// Expose upload method to parent
 	useImperativeHandle(ref, () => ({
 		uploadFile: async () => {
-			if (!selectedFile) return value || null;
+			// If no file is selected locally, check if we already have a valid UUID
+			if (!selectedFile) {
+				// Only return the value if it's a valid UUID (not 'local-file')
+				if (value && value !== 'local-file') {
+					return value;
+				}
+
+				return null;
+			}
 
 			try {
 				const formData = new FormData();
@@ -46,12 +56,14 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
 				});
 
 				if (!response.ok) {
-					throw new Error('Erro ao fazer upload da imagem');
+					const errorData = await response.json().catch(() => ({}));
+					throw new Error(errorData.error || 'Erro ao fazer upload da imagem');
 				}
 
 				const data = await response.json();
-				
-return data.fileId;
+				onChange(data.fileId);
+
+				return data.fileId;
 			} catch (error) {
 				console.error('Error uploading image:', error);
 				throw error;
@@ -61,20 +73,22 @@ return data.fileId;
 
 	const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
-		if (!file) return;
+		if (!file) {
+			return;
+		}
 
 		// Validate file type
 		if (!file.type.startsWith('image/')) {
 			alert('Por favor, selecione apenas arquivos de imagem');
-			
-return;
+
+			return;
 		}
 
 		// Validate file size (5MB max)
 		if (file.size > 5 * 1024 * 1024) {
 			alert('O arquivo deve ter no máximo 5MB');
-			
-return;
+
+			return;
 		}
 
 		// Store file for later upload
@@ -86,7 +100,21 @@ return;
 			setPreview(reader.result as string);
 		};
 		reader.readAsDataURL(file);
+
+		onChange('local-file');
 	};
+
+	useEffect(() => {
+		if (value && value !== 'local-file') {
+			setPreview(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${value}`);
+			setSelectedFile(null);
+		}
+
+		if (!value) {
+			setPreview(null);
+			setSelectedFile(null);
+		}
+	}, [value]);
 
 	const handleRemove = () => {
 		setPreview(null);

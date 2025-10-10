@@ -275,8 +275,8 @@ export function UserMenuDropdown() {
 						<div className="absolute inset-0">
 							<div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600" />
 							<div className="absolute inset-0 opacity-40 mix-blend-screen">
-								<div className="absolute -left-10 top-[-40%] h-56 w-56 rounded-full bg-purple-400 blur-3xl" />
-								<div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-indigo-400 blur-3xl" />
+								<div className="absolute -left-10 top-[-40%] size-56 rounded-full bg-purple-400 blur-3xl" />
+								<div className="absolute right-0 top-0 size-48 rounded-full bg-indigo-400 blur-3xl" />
 							</div>
 						</div>
 

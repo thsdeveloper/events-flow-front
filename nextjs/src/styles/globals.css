@@ -10,7 +10,7 @@
 	--background-variant-color: #172940;
 	--accent-color-dark: color-mix(in srgb, var(--accent-color), black 40%);
 	--accent-color-soft: color-mix(in srgb, var(--accent-color), white 20%);
-	--accent-color-light: color-mix(in srgb, var(--accent-color), white 90%);
+	--accent-color-light: color-mix(in srgb, var(--accent-color), white 40%);
 	--input-color: color-mix(in srgb, var(--background-color), var(--foreground-color) 30%);
 }
 
