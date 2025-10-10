@@ -147,6 +147,11 @@ export async function POST(
         amount: Math.round(installment.amount * 100), // Convert to cents
         currency: 'brl',
         payment_method_types: ['pix'],
+        payment_method_options: {
+          pix: {
+            expires_after_seconds: 86400, // 24 hours
+          },
+        },
         metadata: {
           installment_id: installment.id,
           registration_id: installment.registration_id.id,

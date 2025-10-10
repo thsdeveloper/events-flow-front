@@ -153,11 +153,17 @@ export async function POST(request: NextRequest) {
       amount: Math.round(firstInstallment.amount * 100), // Convert to cents
       currency: 'brl',
       payment_method_types: ['pix'],
+      payment_method_options: {
+        pix: {
+          expires_after_seconds: 86400, // 24 hours
+        },
+      },
       metadata: {
         installment_id: firstInstallment.id,
         registration_id: registration.id,
         installment_number: '1',
         total_installments: validatedData.installments.toString(),
+        event_id: typeof ticket.event_id === 'string' ? ticket.event_id : ticket.event_id.id,
       },
     });
 
