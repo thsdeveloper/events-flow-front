@@ -1,15 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Download, RefreshCcw } from 'lucide-react';
-import type { OrganizerProfile } from '@/lib/auth/server-auth';
-import type {
-	EventsOption,
-	OverviewMetrics,
-	TransactionsResult,
-	PayoutSummary,
-	PaginationState,
-} from '@/lib/finance/server-fetchers';
 import { Button } from '@/components/ui/button';
 import {
 	Card,
@@ -18,11 +10,25 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card';
+import type { OrganizerProfile } from '@/lib/auth/server-auth';
+import type {
+	AppliedFilters,
+	EventsOption,
+	OverviewMetrics,
+	PaginationState,
+	PayoutSummary,
+	TransactionsResult,
+} from '@/lib/finance/server-fetchers';
+import {
+	resolveDateWindow,
+	type TransactionSort,
+} from '@/lib/finance/api-client';
+import { useFinanceOverview, usePayouts, useTransactions } from '@/hooks/queries/useFinanceData';
 import FinanceOverview from './FinanceOverview';
-import FinanceFilters, { type AppliedFilters, type FiltersDraft } from './FinanceFilters';
-import TransactionsTable, { type TransactionRow, type TransactionSort } from './TransactionsTable';
+import FinanceFilters, { type FiltersDraft } from './FinanceFilters';
 import PayoutHistory from './PayoutHistory';
 import StripeAccountStatus from './StripeAccountStatus';
+import TransactionsTable from './TransactionsTable';
 
 const DEFAULT_PAGINATION: PaginationState = {
 	page: 1,
@@ -45,73 +51,15 @@ const currencyFormatter = new Intl.NumberFormat('pt-BR', {
 	currency: 'BRL',
 });
 
-function isoDate(value: Date) {
-	return value.toISOString();
-}
-
-function resolveDateWindow(filters: AppliedFilters) {
-	if (filters.range === 'custom') {
-		return {
-			dateFrom: filters.customFrom,
-			dateTo: filters.customTo,
-		};
-	}
-
-	const now = new Date();
-	const to = isoDate(now);
-	const from = new Date(now);
-
-	switch (filters.range) {
-		case '90d':
-			from.setDate(from.getDate() - 89);
-			break;
-		case 'year':
-			from.setFullYear(from.getFullYear() - 1);
-			from.setDate(from.getDate() + 1);
-			break;
-		case '30d':
-		default:
-			from.setDate(from.getDate() - 29);
-			break;
-	}
-
-	return {
-		dateFrom: isoDate(from),
-		dateTo: to,
-	};
-}
-
-function mapTransactionRow(transaction: any): TransactionRow {
-	const registration = transaction?.registration_id ?? {};
-	const event = registration?.event_id ?? {};
-
-	return {
-		id: transaction?.id ?? '',
-		date: transaction?.date_created ?? '',
-		status: transaction?.status ?? 'pending',
-		transactionId: transaction?.stripe_object_id ?? transaction?.stripe_event_id ?? '',
-		eventTitle: event?.title ?? 'Evento não informado',
-		participantName: registration?.participant_name ?? '—',
-		participantEmail: registration?.participant_email ?? '',
-		quantity: Number(registration?.quantity ?? 0),
-		gross: Number(registration?.total_amount ?? transaction?.amount ?? 0),
-		fee: Number(registration?.service_fee ?? 0),
-		net: Number(registration?.payment_amount ?? 0),
-		paymentStatus: registration?.payment_status ?? 'pending',
-		paymentIntentId: registration?.stripe_payment_intent_id ?? '',
-	};
-}
-
-async function fetchJson<T>(input: RequestInfo, init?: RequestInit, signal?: AbortSignal): Promise<T> {
-	const response = await fetch(input, { ...init, signal });
-
-	if (!response.ok) {
-		const errorPayload = await response.json().catch(() => ({}));
-		const message = (errorPayload as any)?.error ?? 'Erro ao processar requisição';
-		throw new Error(message);
-	}
-
-	return response.json();
+function areFiltersEqual(a: AppliedFilters, b: AppliedFilters) {
+	return (
+		a.range === b.range &&
+		a.status === b.status &&
+		a.eventId === b.eventId &&
+		a.search === b.search &&
+		a.customFrom === b.customFrom &&
+		a.customTo === b.customTo
+	);
 }
 
 function buildExportPayload(filters: AppliedFilters) {
@@ -143,172 +91,60 @@ export default function FinanceiroDashboard({
 	initialPayouts,
 }: FinanceiroDashboardProps) {
 	const [filters, setFilters] = useState<AppliedFilters>(defaultFilters);
-	const [transactions, setTransactions] = useState<TransactionRow[]>(initialTransactions.data);
-	const [pagination, setPagination] = useState<PaginationState>(initialTransactions.pagination);
-	const [events, setEvents] = useState<EventsOption[]>(initialEvents);
-	const [metrics, setMetrics] = useState<OverviewMetrics | null>(initialOverview);
-	const [payoutSummary, setPayoutSummary] = useState<PayoutSummary | null>(initialPayouts);
-	const [transactionsLoading, setTransactionsLoading] = useState(false);
-	const [overviewLoading, setOverviewLoading] = useState(false);
-	const [payoutLoading, setPayoutLoading] = useState(false);
-	const [globalError, setGlobalError] = useState<string | null>(null);
-	const [exporting, setExporting] = useState(false);
+	const [paginationState, setPaginationState] = useState<Pick<PaginationState, 'page' | 'limit'>>({
+		page: initialTransactions.pagination?.page ?? DEFAULT_PAGINATION.page,
+		limit: initialTransactions.pagination?.limit ?? DEFAULT_PAGINATION.limit,
+	});
 	const [sortState, setSortState] = useState<TransactionSort>({
 		field: 'date',
 		direction: 'desc',
 	});
+	const [exporting, setExporting] = useState(false);
+	const [exportError, setExportError] = useState<string | null>(null);
+	const isDefaultFilterSelection = useMemo(
+		() => areFiltersEqual(filters, defaultFilters),
+		[filters],
+	);
+	const isDefaultQueryState =
+		isDefaultFilterSelection &&
+		paginationState.page === (initialTransactions.pagination?.page ?? DEFAULT_PAGINATION.page) &&
+		paginationState.limit === (initialTransactions.pagination?.limit ?? DEFAULT_PAGINATION.limit) &&
+		sortState.field === 'date' &&
+		sortState.direction === 'desc';
 
-	const appliedDateWindow = useMemo(() => resolveDateWindow(filters), [filters]);
+	const overviewQuery = useFinanceOverview(filters, {
+		initialData: isDefaultFilterSelection ? initialOverview : undefined,
+	});
 
-	useEffect(() => {
-		const controller = new AbortController();
-		const params = new URLSearchParams();
+	const transactionsQuery = useTransactions(filters, paginationState, sortState, {
+		initialData: isDefaultQueryState ? initialTransactions : undefined,
+	});
 
-		params.set('range', filters.range);
+	const payoutsQuery = usePayouts({
+		initialData: initialPayouts,
+	});
 
-		if (appliedDateWindow.dateFrom) {
-			params.set('date_from', appliedDateWindow.dateFrom);
-		}
+	const overviewLoading = overviewQuery.isPending || overviewQuery.isFetching;
+	const transactionsLoading = transactionsQuery.isPending || transactionsQuery.isFetching;
+	const payoutLoading = payoutsQuery.isPending || payoutsQuery.isFetching;
 
-		if (appliedDateWindow.dateTo) {
-			params.set('date_to', appliedDateWindow.dateTo);
-		}
+	const metrics = overviewQuery.data ?? null;
+	const transactions = transactionsQuery.data?.data ?? [];
+	const pagination = transactionsQuery.data?.pagination ?? {
+		page: paginationState.page,
+		limit: paginationState.limit,
+		total: 0,
+		pageCount: 0,
+	};
+	const payoutSummary = payoutsQuery.data ?? null;
 
-		let active = true;
+	const transactionsErrorMessage = transactionsQuery.isError
+		? transactionsQuery.error instanceof Error
+			? transactionsQuery.error.message
+			: 'Erro ao carregar transações'
+		: null;
 
-		const loadOverview = async () => {
-			try {
-				if (!active) {
-					return;
-				}
-
-				setOverviewLoading(true);
-				const data = await fetchJson<{ metrics: OverviewMetrics }>(
-					'/api/organizer/finance/overview?' + params.toString(),
-				);
-
-				if (!active) {
-					return;
-				}
-
-				setMetrics(data.metrics);
-			} catch (error) {
-				if (!isAbortError(error) && active) {
-					console.error('Erro ao carregar overview financeiro:', error);
-				}
-			} finally {
-				if (active) {
-					setOverviewLoading(false);
-				}
-			}
-		};
-
-		void loadOverview();
-
-		return () => {
-			active = false;
-		};
-	}, [filters, appliedDateWindow.dateFrom, appliedDateWindow.dateTo]);
-
-	useEffect(() => {
-		const controller = new AbortController();
-		const params = new URLSearchParams();
-
-		params.set('page', String(pagination.page));
-		params.set('limit', String(pagination.limit));
-		params.set('sort_field', sortState.field);
-		params.set('sort_direction', sortState.direction);
-
-		const { dateFrom, dateTo } = appliedDateWindow;
-
-		if (filters.status !== 'all') {
-			params.set('status', filters.status);
-		}
-
-		if (filters.eventId !== 'all') {
-			params.set('event_id', filters.eventId);
-		}
-
-		if (filters.search) {
-			params.set('search', filters.search);
-		}
-
-		if (dateFrom) {
-			params.set('date_from', dateFrom);
-		}
-
-		if (dateTo) {
-			params.set('date_to', dateTo);
-		}
-
-		let active = true;
-
-		const loadTransactions = async () => {
-			try {
-				if (!active) {
-					return;
-				}
-
-				setTransactionsLoading(true);
-				setGlobalError(null);
-
-				const data = await fetchJson<{
-					data: any[];
-					pagination: PaginationState;
-				}>('/api/organizer/finance/transactions?' + params.toString());
-
-				if (!active) {
-					return;
-				}
-
-				setTransactions((data.data ?? []).map(mapTransactionRow));
-				setPagination((prev) => ({
-					...prev,
-					...(data.pagination ?? DEFAULT_PAGINATION),
-				}));
-			} catch (error) {
-				if (!isAbortError(error) && active) {
-					console.error('Erro ao carregar transações:', error);
-					setGlobalError(error instanceof Error ? error.message : 'Erro ao carregar transações');
-					setTransactions([]);
-					setPagination(DEFAULT_PAGINATION);
-				}
-			} finally {
-				if (active) {
-					setTransactionsLoading(false);
-				}
-			}
-		};
-
-		void loadTransactions();
-
-		return () => {
-			active = false;
-		};
-	}, [
-		filters,
-		pagination.page,
-		pagination.limit,
-		sortState.direction,
-		sortState.field,
-		appliedDateWindow.dateFrom,
-		appliedDateWindow.dateTo,
-	]);
-
-	const loadPayouts = useCallback(async () => {
-		try {
-			setPayoutLoading(true);
-			const data = await fetchJson<PayoutSummary>('/api/organizer/finance/payouts');
-			setPayoutSummary(data);
-		} catch (error) {
-			if (!isAbortError(error)) {
-				console.error('Erro ao carregar repasses:', error);
-				setPayoutSummary(null);
-			}
-		} finally {
-			setPayoutLoading(false);
-		}
-	}, []);
+	const globalError = exportError ?? transactionsErrorMessage;
 
 	const handleFiltersApply = (draft: FiltersDraft) => {
 		setFilters({
@@ -319,20 +155,24 @@ export default function FinanceiroDashboard({
 			customFrom: draft.customFrom,
 			customTo: draft.customTo,
 		});
-		setPagination((prev) => ({ ...prev, page: 1 }));
+		setExportError(null);
+		setPaginationState((prev) => ({ ...prev, page: 1 }));
 	};
 
 	const handlePageChange = (page: number) => {
-		setPagination((prev) => ({ ...prev, page }));
+		setExportError(null);
+		setPaginationState((prev) => ({ ...prev, page }));
 	};
 
 	const handleSortChange = (sort: TransactionSort) => {
 		setSortState(sort);
-		setPagination((prev) => ({ ...prev, page: 1 }));
+		setExportError(null);
+		setPaginationState((prev) => ({ ...prev, page: 1 }));
 	};
 
 	const handleExport = async () => {
 		try {
+			setExportError(null);
 			setExporting(true);
 			const payload = buildExportPayload(filters);
 			const response = await fetch('/api/organizer/finance/export', {
@@ -343,7 +183,7 @@ export default function FinanceiroDashboard({
 
 			if (!response.ok) {
 				const errorPayload = await response.json().catch(() => ({}));
-				throw new Error((errorPayload as any)?.error ?? 'Falha ao exportar CSV');
+				throw new Error((errorPayload as { error?: string })?.error ?? 'Falha ao exportar CSV');
 			}
 
 			const blob = await response.blob();
@@ -359,9 +199,18 @@ export default function FinanceiroDashboard({
 			URL.revokeObjectURL(url);
 		} catch (error) {
 			console.error('Erro ao exportar CSV:', error);
-			setGlobalError(error instanceof Error ? error.message : 'Erro ao exportar dados');
+			const message = error instanceof Error ? error.message : 'Erro ao exportar dados';
+			setExportError(message);
 		} finally {
 			setExporting(false);
+		}
+	};
+
+	const loadPayouts = async () => {
+		const result = await payoutsQuery.refetch();
+
+		if (result.error) {
+			console.error('Erro ao carregar repasses:', result.error);
 		}
 	};
 
@@ -382,18 +231,18 @@ export default function FinanceiroDashboard({
 						onClick={loadPayouts}
 						disabled={payoutLoading}
 					>
-						<RefreshCcw className="size-4 mr-2" />
+						<RefreshCcw className="mr-2 size-4" />
 						Atualizar repasses
 					</Button>
 					<Button onClick={handleExport} disabled={exporting}>
-						<Download className="size-4 mr-2" />
+						<Download className="mr-2 size-4" />
 						Exportar CSV
 					</Button>
 				</div>
 			</div>
 
 			<FinanceFilters
-				events={events}
+				events={initialEvents}
 				filters={filters}
 				onApply={handleFiltersApply}
 			/>
@@ -406,7 +255,7 @@ export default function FinanceiroDashboard({
 				currencyFormatter={currencyFormatter}
 			/>
 
-			<Card className="border border-gray-200 dark:border-gray-800 shadow-sm">
+			<Card className="border border-gray-200 shadow-sm dark:border-gray-800">
 				<CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
 					<div>
 						<CardTitle>Transações</CardTitle>
@@ -441,14 +290,3 @@ export default function FinanceiroDashboard({
 		</div>
 	);
 }
-const isAbortError = (error: unknown) => {
-	if (!error) {
-		return false;
-	}
-
-	if (error instanceof DOMException && error.name === 'AbortError') {
-		return true;
-	}
-
-	return (error as { name?: string }).name === 'AbortError';
-};

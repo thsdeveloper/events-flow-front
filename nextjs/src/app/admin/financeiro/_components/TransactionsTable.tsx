@@ -1,43 +1,15 @@
 'use client';
 
 import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import type { PaginationState, TransactionRow } from '@/lib/finance/server-fetchers';
+import type { TransactionSort, TransactionSortField } from '@/lib/finance/api-client';
 import { Button } from '@/components/ui/button';
-
-export type TransactionRow = {
-	id: string;
-	date: string;
-	status: string;
-	transactionId: string;
-	eventTitle: string;
-	participantName: string;
-	participantEmail: string;
-	quantity: number;
-	gross: number;
-	fee: number;
-	net: number;
-	paymentStatus: string;
-	paymentIntentId: string;
-};
-
-export type TransactionSortField = 'date' | 'status' | 'gross' | 'fee' | 'net';
-
-export type TransactionSort = {
-	field: TransactionSortField;
-	direction: 'asc' | 'desc';
-};
-
-export interface TransactionPagination {
-	page: number;
-	limit: number;
-	total: number;
-	pageCount: number;
-}
+import { Badge } from '@/components/ui/badge';
 
 interface TransactionsTableProps {
 	rows: TransactionRow[];
 	isLoading: boolean;
-	pagination: TransactionPagination;
+	pagination: PaginationState;
 	onPageChange: (page: number) => void;
 	onSortChange: (sort: TransactionSort) => void;
 	sort: TransactionSort;

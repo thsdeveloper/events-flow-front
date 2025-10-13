@@ -1,6 +1,7 @@
-import { requireOrganizer } from '@/lib/auth/server-auth';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
+import { ReactQueryProvider } from '@/contexts/ReactQueryProvider';
+import { requireOrganizer } from '@/lib/auth/server-auth';
 
 /**
  * Admin Area Layout (Server Component)
@@ -17,22 +18,24 @@ export default async function AdminLayout({
 	const { user, organizer } = await requireOrganizer();
 
 	return (
-		<div className="min-h-screen bg-gray-50 dark:bg-slate-950">
-			{/* Sidebar */}
-			<AdminSidebar organizer={organizer} />
+		<ReactQueryProvider>
+			<div className="min-h-screen bg-gray-50 dark:bg-slate-950">
+				{/* Sidebar */}
+				<AdminSidebar organizer={organizer} />
 
-			{/* Main Content Area */}
-			<div className="lg:pl-64 transition-all duration-300">
-				{/* Header */}
-				<AdminHeader user={user} organizer={organizer} />
+				{/* Main Content Area */}
+				<div className="lg:pl-64 transition-all duration-300">
+					{/* Header */}
+					<AdminHeader user={user} organizer={organizer} />
 
-				{/* Page Content */}
-				<main className="p-6">
-					<div className="mx-auto">
-						{children}
-					</div>
-				</main>
+					{/* Page Content */}
+					<main className="p-6">
+						<div className="mx-auto">
+							{children}
+						</div>
+					</main>
+				</div>
 			</div>
-		</div>
+		</ReactQueryProvider>
 	);
 }
