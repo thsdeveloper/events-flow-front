@@ -1,10 +1,8 @@
 'use client';
 
-import type { ComponentPropsWithoutRef, ElementRef } from 'react';
-import { forwardRef, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {
 	UserRound,
 	Ticket,
@@ -28,46 +26,14 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
-const DrawerOverlay = forwardRef<
-	ElementRef<typeof DialogPrimitive.Overlay>,
-	ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
->(({ className, ...props }, ref) => (
-	<DialogPrimitive.Overlay
-		ref={ref}
-		className={cn(
-			'fixed inset-0 z-[60] bg-slate-950/60 backdrop-blur-md transition duration-300 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=open]:animate-in data-[state=open]:fade-in',
-			className,
-		)}
-		{...props}
-	/>
-));
-DrawerOverlay.displayName = DialogPrimitive.Overlay.displayName;
-
-const DrawerContent = forwardRef<
-	ElementRef<typeof DialogPrimitive.Content>,
-	ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-	<DialogPrimitive.Content
-		ref={ref}
-		className={cn(
-			'fixed inset-y-0 right-0 z-[70] flex h-full w-full max-w-md flex-col overflow-hidden border-l border-white/10 bg-slate-900 text-white shadow-2xl transition-transform duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 data-[state=closed]:translate-x-full data-[state=open]:translate-x-0',
-			className,
-		)}
-		{...props}
-	>
-		<motion.div
-			initial={{ x: 48, opacity: 0 }}
-			animate={{ x: 0, opacity: 1 }}
-			exit={{ x: 48, opacity: 0 }}
-			transition={{ type: 'spring', stiffness: 240, damping: 32 }}
-			className="flex h-full flex-col"
-		>
-			{children}
-		</motion.div>
-	</DialogPrimitive.Content>
-));
-DrawerContent.displayName = DialogPrimitive.Content.displayName;
+import {
+	Sheet,
+	SheetTrigger,
+	SheetContent,
+	SheetTitle,
+	SheetDescription,
+	SheetClose,
+} from '@/components/ui/sheet';
 
 const NAVIGATIONS: Array<{
 	key: string;
@@ -234,8 +200,8 @@ export function UserMenuDropdown() {
 	}
 
 	return (
-		<DialogPrimitive.Root open={open} onOpenChange={setOpen}>
-			<DialogPrimitive.Trigger asChild>
+		<Sheet open={open} onOpenChange={setOpen}>
+			<SheetTrigger asChild>
 				<button
 					type="button"
 					className="group relative flex size-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 font-semibold text-white shadow-lg transition-transform duration-200 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900"
@@ -259,18 +225,26 @@ export function UserMenuDropdown() {
 						<span className="absolute -right-1 -top-1 flex size-3 rounded-full border border-slate-900 bg-emerald-400 shadow-md" />
 					)}
 				</button>
-			</DialogPrimitive.Trigger>
+			</SheetTrigger>
 
-			<DialogPrimitive.Portal>
-				<DrawerOverlay />
-				<DrawerContent>
-					<DialogPrimitive.Title className="sr-only">
-						Menu da conta do usuário EventsFlow
-					</DialogPrimitive.Title>
-					<DialogPrimitive.Description className="sr-only">
-						Acesse atalhos, preferências e suporte da sua conta.
-					</DialogPrimitive.Description>
+			<SheetContent
+				side="right"
+				hideCloseButton
+				overlayClassName="bg-slate-950/60 backdrop-blur-md transition duration-300 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=open]:animate-in data-[state=open]:fade-in"
+				className="z-[70] flex size-full max-w-md flex-col overflow-hidden border-l border-white/10 bg-slate-900 text-white shadow-2xl transition-transform duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 data-[state=closed]:translate-x-full data-[state=open]:translate-x-0"
+			>
+				<SheetTitle className="sr-only">Menu da conta do usuário EventsFlow</SheetTitle>
+				<SheetDescription className="sr-only">
+					Acesse atalhos, preferências e suporte da sua conta.
+				</SheetDescription>
 
+				<motion.div
+					initial={{ x: 48, opacity: 0 }}
+					animate={{ x: 0, opacity: 1 }}
+					exit={{ x: 48, opacity: 0 }}
+					transition={{ type: 'spring', stiffness: 240, damping: 32 }}
+					className="flex h-full flex-col"
+				>
 					<header className="relative overflow-hidden p-6">
 						<div className="absolute inset-0">
 							<div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600" />
@@ -340,7 +314,7 @@ export function UserMenuDropdown() {
 								</div>
 							</div>
 
-							<DialogPrimitive.Close asChild>
+							<SheetClose asChild>
 								<button
 									type="button"
 									className="rounded-full bg-white/10 p-2 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
@@ -349,7 +323,7 @@ export function UserMenuDropdown() {
 									<span className="sr-only">Fechar</span>
 									<ChevronRight className="size-5 rotate-180" />
 								</button>
-							</DialogPrimitive.Close>
+							</SheetClose>
 						</div>
 
 						<div className="relative mt-6">
@@ -406,7 +380,7 @@ export function UserMenuDropdown() {
 
 										return (
 											<li key={item.key}>
-												<DialogPrimitive.Close asChild>
+												<SheetClose asChild>
 													<Link
 														href={item.href}
 														className={cn(
@@ -437,7 +411,7 @@ export function UserMenuDropdown() {
 															<ChevronRight className="size-4 text-white/60 transition group-hover:translate-x-1 group-hover:text-white" />
 														</div>
 													</Link>
-												</DialogPrimitive.Close>
+												</SheetClose>
 											</li>
 										);
 									})}
@@ -473,7 +447,7 @@ export function UserMenuDropdown() {
 								<p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-400">
 									Suporte
 								</p>
-								<DialogPrimitive.Close asChild>
+								<SheetClose asChild>
 									<Link
 										href="/ajuda"
 										className="group flex items-center justify-between rounded-2xl border border-white/5 bg-white/5 px-4 py-3 transition hover:border-white/10 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
@@ -491,13 +465,13 @@ export function UserMenuDropdown() {
 										</div>
 										<ChevronRight className="size-4 text-white/60 transition group-hover:translate-x-1 group-hover:text-white" />
 									</Link>
-								</DialogPrimitive.Close>
+								</SheetClose>
 							</div>
 						</nav>
 					</div>
 
 					<footer className="border-t border-white/10 bg-slate-950/50 px-6 py-5">
-						<DialogPrimitive.Close asChild>
+						<SheetClose asChild>
 							<Button
 								type="button"
 								onClick={logout}
@@ -512,10 +486,10 @@ export function UserMenuDropdown() {
 								</span>
 								<ChevronRight className="size-4 text-red-200/70 transition group-hover:translate-x-1 group-hover:text-red-100" />
 							</Button>
-						</DialogPrimitive.Close>
+						</SheetClose>
 					</footer>
-				</DrawerContent>
-			</DialogPrimitive.Portal>
-		</DialogPrimitive.Root>
+				</motion.div>
+			</SheetContent>
+		</Sheet>
 	);
 }

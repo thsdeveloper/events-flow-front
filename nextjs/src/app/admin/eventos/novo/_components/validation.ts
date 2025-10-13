@@ -14,11 +14,7 @@ export const basicInfoSchema = z.object({
 		.trim()
 		.max(160, 'Limite de 160 caracteres')
 		.optional()
-		.or(z.literal(''))
-		.refine(
-			value => !value || value === '' || value.length >= 50,
-			'Adicione pelo menos 50 caracteres para uma descrição mais atraente',
-		),
+		.or(z.literal('')),
 });
 
 export const coverImageSchema = z.object({

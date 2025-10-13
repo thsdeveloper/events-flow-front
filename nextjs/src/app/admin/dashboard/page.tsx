@@ -1,5 +1,6 @@
 import { Calendar, Users, TrendingUp, DollarSign, Ticket, Eye, MapPin, Clock } from 'lucide-react';
 import Link from 'next/link';
+import {Button} from "@/components/ui/button";
 
 export default function DashboardPage() {
 	return (
@@ -13,6 +14,9 @@ export default function DashboardPage() {
 					Aqui está um resumo das suas atividades recentes
 				</p>
 			</div>
+			<>
+				<Button>Teste de button</Button>
+			</>
 
 			{/* Stats Grid */}
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
