@@ -1,12 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { Plus, Calendar, Users, MapPin } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Plus, Calendar, Users, MapPin, ArrowRight, Clock } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { readItems } from '@directus/sdk';
 import { useServerAuth } from '@/hooks/useServerAuth';
 import { useDirectusClient } from '@/hooks/useDirectusClient';
 import { Event } from '@/types/directus-schema';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 export default function EventosPage() {
 	const { user } = useServerAuth();
@@ -18,7 +23,7 @@ export default function EventosPage() {
 		const fetchEvents = async () => {
 			if (!client) {
 				setLoading(false);
-				
+
 return;
 			}
 
@@ -73,6 +78,58 @@ return;
 		}
 	}, [user, client]);
 
+	const preparedEvents = useMemo(
+		() =>
+			events.map((event) => ({
+				event,
+				participantsCount: Array.isArray(event.registrations) ? event.registrations.length : 0,
+			})),
+		[events],
+	);
+
+	const eventStats = useMemo(() => {
+		if (preparedEvents.length === 0) {
+			return {
+				total: 0,
+				published: 0,
+				drafts: 0,
+				upcoming: 0,
+				participants: 0,
+			};
+		}
+
+		const now = Date.now();
+
+		const totals = preparedEvents.reduce(
+			(acc, item) => {
+				acc.total += 1;
+				acc.participants += item.participantsCount;
+
+				if (item.event.status === 'published') {
+					acc.published += 1;
+				} else if (item.event.status === 'draft') {
+					acc.drafts += 1;
+				}
+
+				const eventStart = item.event.start_date ? new Date(item.event.start_date).getTime() : undefined;
+				if (eventStart && eventStart > now && item.event.status === 'published') {
+					acc.upcoming += 1;
+				}
+
+				return acc;
+			},
+			{
+				total: 0,
+				published: 0,
+				drafts: 0,
+				upcoming: 0,
+				participants: 0,
+			},
+		);
+
+		return totals;
+	}, [preparedEvents]);
+
 	if (loading) {
 		return (
 			<div className="flex items-center justify-center min-h-[400px]">
@@ -85,50 +142,102 @@ return;
 	}
 
 	return (
-		<div className="space-y-6">
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-						Meus Eventos
-					</h1>
-					<p className="text-gray-600 dark:text-gray-400 mt-1">
-						Gerencie todos os seus eventos
-					</p>
+		<div className="space-y-8">
+			<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+				<div className="space-y-1">
+					<h1 className="text-3xl font-bold tracking-tight text-foreground">Meus Eventos</h1>
+					<p className="text-muted-foreground">Acompanhe o desempenho e crie novas experiências.</p>
 				</div>
-				<Link
-					href="/admin/eventos/novo"
-					className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors"
-				>
-					<Plus className="size-5" />
-					Criar Evento
-				</Link>
+				<Button asChild className="gap-2">
+					<Link href="/admin/eventos/novo">
+						<Plus className="size-4" />
+						Criar evento
+					</Link>
+				</Button>
 			</div>
 
+			{preparedEvents.length > 0 && (
+				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+					<Card className="border-dashed">
+						<CardHeader className="pb-2">
+							<CardDescription>Total de eventos</CardDescription>
+							<CardTitle className="text-3xl">{eventStats.total}</CardTitle>
+						</CardHeader>
+						<CardContent className="flex items-center gap-2 pt-0 text-xs text-muted-foreground">
+							<Badge variant="outline" className="border-transparent bg-muted/60 text-muted-foreground">
+								Publicados {eventStats.published}
+							</Badge>
+							<Badge variant="outline" className="border-transparent bg-muted/60 text-muted-foreground">
+								Rascunhos {eventStats.drafts}
+							</Badge>
+						</CardContent>
+					</Card>
+
+					<Card className="border-dashed">
+						<CardHeader className="pb-2">
+							<CardDescription>Próximos 30 dias</CardDescription>
+							<CardTitle className="text-3xl">{eventStats.upcoming}</CardTitle>
+						</CardHeader>
+						<CardContent className="flex items-center gap-2 pt-0 text-xs text-muted-foreground">
+							<Clock className="size-4 text-primary" />
+							<span>Eventos publicados com data futura</span>
+						</CardContent>
+					</Card>
+
+					<Card className="border-dashed">
+						<CardHeader className="pb-2">
+							<CardDescription>Participantes confirmados</CardDescription>
+							<CardTitle className="text-3xl">{eventStats.participants}</CardTitle>
+						</CardHeader>
+						<CardContent className="flex items-center gap-2 pt-0 text-xs text-muted-foreground">
+							<Users className="size-4 text-primary" />
+							<span>Total de inscrições registradas</span>
+						</CardContent>
+					</Card>
+
+					<Card className="border-dashed">
+						<CardHeader className="pb-2">
+							<CardDescription>Eventos em destaque</CardDescription>
+							<CardTitle className="text-3xl">
+								{preparedEvents.filter(({ event }) => event.featured).length}
+							</CardTitle>
+						</CardHeader>
+						<CardContent className="flex items-center gap-2 pt-0 text-xs text-muted-foreground">
+							<Badge variant="secondary" className="border-transparent">
+								Destaque ativo
+							</Badge>
+							<span>Usado para destacar na vitrine</span>
+						</CardContent>
+					</Card>
+				</div>
+			)}
+
 			{/* Events List */}
-			{events.length > 0 ? (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-					{events.map((event) => (
-						<EventCard key={event.id} event={event} />
+			{preparedEvents.length > 0 ? (
+				<div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+					{preparedEvents.map(({ event, participantsCount }) => (
+						<EventCard key={event.id} event={event} participantsCount={participantsCount} />
 					))}
 				</div>
 			) : (
 				/* Empty State */
-				<div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
-					<Calendar className="size-16 text-gray-400 mx-auto mb-4" />
-					<h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-						Nenhum evento criado ainda
-					</h3>
-					<p className="text-gray-600 dark:text-gray-400 mb-6">
-						Comece criando seu primeiro evento
-					</p>
-					<Link
-						href="/admin/eventos/novo"
-						className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors"
-					>
-						<Plus className="size-5" />
-						Criar Primeiro Evento
-					</Link>
-				</div>
+				<Card className="grid place-items-center border-dashed py-16 text-center">
+					<CardHeader className="items-center">
+						<div className="rounded-full border border-dashed border-border/80 p-4">
+							<Calendar className="size-10 text-muted-foreground" />
+						</div>
+						<CardTitle className="text-xl">Nenhum evento criado ainda</CardTitle>
+						<CardDescription>Crie seu primeiro evento e acompanhe tudo por aqui.</CardDescription>
+					</CardHeader>
+					<CardFooter>
+						<Button asChild className="gap-2">
+							<Link href="/admin/eventos/novo">
+								<Plus className="size-4" />
+								Criar primeiro evento
+							</Link>
+						</Button>
+					</CardFooter>
+				</Card>
 			)}
 		</div>
 	);
@@ -136,12 +245,17 @@ return;
 
 interface EventCardProps {
 	event: Event;
+	participantsCount: number;
 }
 
-function EventCard({ event }: EventCardProps) {
+function EventCard({ event, participantsCount }: EventCardProps) {
 	const formatDate = (dateString: string) => {
+		if (!dateString) {
+			return 'Data a definir';
+		}
+
 		const date = new Date(dateString);
-		
+
 return date.toLocaleDateString('pt-BR', {
 			day: 'numeric',
 			month: 'long',
@@ -155,28 +269,35 @@ return date.toLocaleDateString('pt-BR', {
 		const statusMap: Record<string, { label: string; className: string }> = {
 			published: {
 				label: 'Publicado',
-				className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+				className:
+					'border-transparent bg-emerald-500/10 text-emerald-700 shadow-none dark:bg-emerald-400/10 dark:text-emerald-200',
 			},
 			draft: {
 				label: 'Rascunho',
-				className: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+				className:
+					'border-transparent bg-muted text-muted-foreground shadow-none dark:bg-muted/40 dark:text-muted-foreground',
 			},
 			cancelled: {
 				label: 'Cancelado',
-				className: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+				className:
+					'border-transparent bg-red-500/10 text-red-600 shadow-none dark:bg-red-500/20 dark:text-red-200',
 			},
 			archived: {
 				label: 'Arquivado',
-				className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+				className:
+					'border-transparent bg-amber-500/10 text-amber-700 shadow-none dark:bg-amber-500/20 dark:text-amber-200',
 			},
 		};
 
 		const statusInfo = statusMap[status || 'draft'];
-		
+
 return (
-			<span className={`px-2 py-1 text-xs font-medium rounded ${statusInfo.className}`}>
+			<Badge
+				variant="outline"
+				className={cn('whitespace-nowrap border border-transparent text-xs font-medium', statusInfo.className)}
+			>
 				{statusInfo.label}
-			</span>
+			</Badge>
 		);
 	};
 
@@ -187,42 +308,84 @@ return (
 		if (event.event_type === 'hybrid') {
 			return `${event.location_address || 'Híbrido'} (Online e Presencial)`;
 		}
-		
+
 return event.location_address || event.location_name || 'Local a definir';
 	};
 
-	// Count registrations (placeholder for now)
-	const participantsCount = Array.isArray(event.registrations)
-		? event.registrations.length
-		: 0;
+	const eventTypeMap: Record<string, string> = {
+		online: 'Online',
+		hybrid: 'Híbrido',
+		in_person: 'Presencial',
+	};
+
+	const eventTypeLabel = eventTypeMap[event.event_type ?? ''] || 'Evento';
+	const description = event.short_description || event.description || 'Sem descrição cadastrada.';
 
 	return (
-		<Link
-			href={`/admin/eventos/${event.id}`}
-			className="block bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:border-accent transition-colors"
-		>
-			<div className="flex items-start justify-between mb-4">
-				<h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-2">
-					{event.title}
-				</h3>
-				{getStatusBadge(event.status)}
-			</div>
+		<Link href={`/admin/eventos/${event.id}`} className="group h-full">
+			<Card className="flex h-full flex-col transition-all hover:border-primary/40 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2">
+				<CardHeader className="space-y-3">
+					<div className="flex items-start justify-between gap-3">
+						<div className="space-y-1">
+							<CardTitle className="line-clamp-2 text-lg leading-tight group-hover:text-primary">
+								{event.title}
+							</CardTitle>
+							<CardDescription className="line-clamp-2 text-sm">{description}</CardDescription>
+						</div>
+						{getStatusBadge(event.status)}
+					</div>
 
-			<div className="space-y-2">
-				<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-					<Calendar className="size-4 flex-shrink-0" />
-					<span className="line-clamp-1">{formatDate(event.start_date)}</span>
-				</div>
-				<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-					<MapPin className="size-4 flex-shrink-0" />
-					<span className="line-clamp-1">{getLocation()}</span>
-				</div>
-				<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-					<Users className="size-4 flex-shrink-0" />
-					{participantsCount} participante{participantsCount !== 1 ? 's' : ''}
-					{event.max_attendees && ` / ${event.max_attendees} vagas`}
-				</div>
-			</div>
+					<div className="flex flex-wrap gap-2">
+						<Badge variant="secondary" className="capitalize">
+							{eventTypeLabel}
+						</Badge>
+						{event.featured ? (
+							<Badge variant="outline" className="border-primary/40 bg-primary/5 text-primary">
+								Destaque
+							</Badge>
+						) : null}
+						{event.is_free ? (
+							<Badge variant="outline" className="border-emerald-300 bg-emerald-500/10 text-emerald-600">
+								Gratuito
+							</Badge>
+						) : null}
+					</div>
+				</CardHeader>
+
+				<CardContent className="space-y-4">
+					<div className="space-y-2 text-sm text-muted-foreground">
+						<div className="flex items-center gap-2">
+							<Calendar className="size-4 text-primary" />
+							<span className="line-clamp-1">{formatDate(event.start_date)}</span>
+						</div>
+						<div className="flex items-center gap-2">
+							<MapPin className="size-4 text-primary" />
+							<span className="line-clamp-1">{getLocation()}</span>
+						</div>
+					</div>
+
+					<Separator />
+
+					<div className="flex items-center justify-between text-sm">
+						<div className="flex items-center gap-2 text-muted-foreground">
+							<Users className="size-4 text-primary" />
+							<span>
+								{participantsCount} participante{participantsCount !== 1 ? 's' : ''}
+							</span>
+						</div>
+						{event.max_attendees ? (
+							<Badge variant="outline" className="border-transparent bg-muted/60 text-xs text-muted-foreground">
+								Limite {event.max_attendees}
+							</Badge>
+						) : null}
+					</div>
+				</CardContent>
+
+				<CardFooter className="mt-auto flex items-center justify-between pt-4 text-sm text-muted-foreground">
+					<span className="font-medium">Ver detalhes</span>
+					<ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+				</CardFooter>
+			</Card>
 		</Link>
 	);
 }

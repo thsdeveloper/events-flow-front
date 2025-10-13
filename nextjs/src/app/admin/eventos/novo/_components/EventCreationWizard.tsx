@@ -153,7 +153,7 @@ export function EventCreationWizard() {
 	const form = useForm<EventWizardFormValues>({
 		mode: 'onBlur',
 		reValidateMode: 'onChange',
-		resolver: zodResolver(eventWizardSchema),
+		// Don't use resolver - we'll validate manually per step
 		defaultValues: {
 			title: '',
 			category_id: '',
@@ -429,6 +429,26 @@ export function EventCreationWizard() {
 
 	const onSubmit = useCallback(
 		async (values: EventWizardFormValues) => {
+			// Prevent submission if not on the last step
+			if (currentStep !== steps.length - 1) {
+				return;
+			}
+
+			// Validate the entire form with the complete schema
+			const validationResult = eventWizardSchema.safeParse(values);
+			if (!validationResult.success) {
+				validationResult.error.issues.forEach(issue => {
+					const path = issue.path[0] as keyof EventWizardFormValues;
+					form.setError(path, { message: issue.message });
+				});
+				toast({
+					title: 'Erro de validação',
+					description: 'Por favor, revise todos os campos obrigatórios.',
+					variant: 'destructive',
+				});
+				return;
+			}
+
 			if (!client) {
 				toast({
 					title: 'Conexão perdida',
@@ -526,11 +546,9 @@ export function EventCreationWizard() {
 				if (celebrationTimeoutRef.current) {
 					clearTimeout(celebrationTimeoutRef.current);
 				}
-				const redirectUrl = created?.id ? `/admin/eventos/${created.id}` : '/admin/eventos';
 				celebrationTimeoutRef.current = setTimeout(() => {
 					setShowCelebration(false);
-					router.push(redirectUrl);
-				}, 1600);
+				}, 3000);
 			} catch (error: any) {
 				console.error('Erro ao criar evento', error);
 				toast({
@@ -542,7 +560,7 @@ export function EventCreationWizard() {
 				setIsSubmitting(false);
 			}
 		},
-		[client, form, organizer?.id, router, toast],
+		[client, currentStep, form, organizer?.id, router, toast],
 	);
 
 	const isFirstStep = currentStep === 0;
@@ -577,17 +595,25 @@ export function EventCreationWizard() {
 		}
 	}, [categories, coverAiError, currentStep, form, handleGenerateCover, isGeneratingCover]);
 
+	const handleFormSubmit = useCallback(
+		(e: React.FormEvent<HTMLFormElement>) => {
+			e.preventDefault();
+
+			// Only allow submission on the last step
+			if (currentStep !== steps.length - 1) {
+				return;
+			}
+
+			// Call react-hook-form's handleSubmit
+			form.handleSubmit(onSubmit)(e);
+		},
+		[currentStep, form, onSubmit],
+	);
+
 	return (
 		<Form {...form}>
-			<form className="space-y-8" onSubmit={form.handleSubmit(onSubmit)}>
+			<form className="space-y-8" onSubmit={handleFormSubmit}>
 				<div className="flex flex-col gap-6">
-					<div className="flex flex-col gap-3">
-						<h1 className="text-3xl font-bold tracking-tight">Criar novo evento</h1>
-						<p className="text-sm text-muted-foreground">
-							Siga as etapas para montar um evento completo e pronto para atrair participantes.
-						</p>
-					</div>
-
 					<WizardProgressBar
 						steps={steps}
 						currentStep={currentStep}

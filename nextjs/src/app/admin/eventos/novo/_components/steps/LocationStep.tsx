@@ -126,16 +126,17 @@ export function LocationStep() {
 	return (
 		<div className="space-y-8">
 			<div className="rounded-xl border bg-card p-6 shadow-sm">
-				<div className="flex items-start justify-between gap-4">
-					<div>
-						<h2 className="text-xl font-semibold">Formato e localização</h2>
-						<p className="text-sm text-muted-foreground">
-							Escolha o formato que faz mais sentido e informe como o público chega até o evento.
-						</p>
+				<div className="flex flex-col gap-2">
+					<div className="flex items-start justify-between gap-4">
+						<div>
+							<h2 className="text-xl font-semibold">Formato e localização</h2>
+							<p className="text-sm text-muted-foreground">
+								Escolha o formato que faz mais sentido e informe como o público chega até o evento.
+							</p>
+						</div>
 					</div>
-				</div>
 
-				<div className="mt-6 space-y-6">
+					<div className="mt-6 space-y-6">
 					<div>
 						<h3 className="text-sm font-medium">Formato do evento</h3>
 						<div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -288,6 +289,7 @@ export function LocationStep() {
 							/>
 						</div>
 					)}
+					</div>
 				</div>
 			</div>
 		</div>

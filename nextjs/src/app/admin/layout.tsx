@@ -2,6 +2,7 @@ import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { ReactQueryProvider } from '@/contexts/ReactQueryProvider';
 import { requireOrganizer } from '@/lib/auth/server-auth';
+import React from "react";
 
 /**
  * Admin Area Layout (Server Component)

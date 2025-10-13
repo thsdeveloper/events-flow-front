@@ -35,13 +35,19 @@ export function ReviewStep({ categories }: ReviewStepProps) {
 	};
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-8">
 			<div className="rounded-xl border bg-card p-6 shadow-sm">
-				<h2 className="text-xl font-semibold">Revise antes de publicar</h2>
-				<p className="text-sm text-muted-foreground">
-					Confira se tudo está pronto. Você ainda poderá editar depois de criar o evento.
-				</p>
-			</div>
+				<div className="flex flex-col gap-2">
+					<div className="flex items-start justify-between gap-4">
+						<div>
+							<h2 className="text-xl font-semibold">Revise antes de publicar</h2>
+							<p className="text-sm text-muted-foreground">
+								Confira se tudo está pronto. Você ainda poderá editar depois de criar o evento.
+							</p>
+						</div>
+					</div>
+
+					<div className="mt-6 space-y-6">
 
 			<Card className="space-y-6 p-6">
 				<section>
@@ -139,6 +145,9 @@ export function ReviewStep({ categories }: ReviewStepProps) {
 					</div>
 				</section>
 			</Card>
+					</div>
+				</div>
+			</div>
 		</div>
 	);
 }

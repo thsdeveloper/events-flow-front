@@ -22,7 +22,6 @@ export function StepNavigation({
 	disableNext,
 }: StepNavigationProps) {
 	const isProcessing = isSubmitting || !!isLoadingOrganizer;
-	const nextButtonType = isLastStep ? 'submit' : 'button';
 	const nextDisabled = disableNext || isProcessing;
 
 	return (
@@ -34,19 +33,27 @@ export function StepNavigation({
 					size="lg"
 					onClick={onBack}
 					disabled={isFirstStep || isProcessing}
-					className="border-secondary/60 bg-gradient-to-r from-secondary via-secondary/90 to-secondary text-white shadow-md hover:from-secondary/90 hover:to-secondary disabled:opacity-70"
 				>
 					Voltar
 				</Button>
-				<Button
-					type={nextButtonType}
-					size="lg"
-					onClick={isLastStep ? undefined : onNext}
-					disabled={nextDisabled}
-					className="border-secondary/60 bg-gradient-to-r from-secondary via-secondary/90 to-secondary text-white shadow-md hover:from-secondary/90 hover:to-secondary disabled:opacity-70"
-				>
-					{isSubmitting ? 'Salvando...' : isLastStep ? 'Publicar evento' : 'Continuar'}
-				</Button>
+				{isLastStep ? (
+					<Button
+						type="submit"
+						size="lg"
+						disabled={nextDisabled}
+					>
+						{isSubmitting ? 'Salvando...' : 'Criar evento'}
+					</Button>
+				) : (
+					<Button
+						type="button"
+						size="lg"
+						onClick={onNext}
+						disabled={nextDisabled}
+					>
+						Continuar
+					</Button>
+				)}
 			</div>
 		</div>
 	);

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Tag, Wand2 } from 'lucide-react';
+import { Tag, Wand2, X } from 'lucide-react';
 import { useFormContext } from 'react-hook-form';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
@@ -104,13 +104,11 @@ export function DetailsStep() {
 											key={tag}
 											type="button"
 											onClick={() => removeTag(tag)}
-											className="group inline-flex items-center gap-2 rounded-full border bg-muted px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-destructive hover:bg-destructive/10 hover:text-destructive"
+											className="group inline-flex items-center gap-1.5 rounded-full border bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:border-destructive hover:bg-destructive/10 hover:text-destructive"
 										>
 											<Tag className="size-3" />
 											<span>{tag}</span>
-											<span className="rounded-full bg-background px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground group-hover:bg-destructive group-hover:text-destructive-foreground">
-												Remover
-											</span>
+											<X className="size-3.5" />
 										</button>
 									))}
 								</div>
