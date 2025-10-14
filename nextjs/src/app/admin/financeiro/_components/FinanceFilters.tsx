@@ -12,6 +12,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export type RangeOption = '30d' | '90d' | 'year' | 'custom';
 export type StatusOption = 'all' | 'succeeded' | 'pending' | 'failed' | 'refunded';
@@ -44,10 +45,17 @@ const defaultDraft: FiltersDraft = {
 
 export default function FinanceFilters({ events, filters, onApply }: FinanceFiltersProps) {
 	const [draft, setDraft] = useState<FiltersDraft>(filters ?? defaultDraft);
+	const [searchInput, setSearchInput] = useState(filters?.search ?? '');
+	const debouncedSearch = useDebounce(searchInput, 500);
 
 	useEffect(() => {
 		setDraft(filters);
+		setSearchInput(filters?.search ?? '');
 	}, [filters]);
+
+	useEffect(() => {
+		setDraft((prev) => ({ ...prev, search: debouncedSearch }));
+	}, [debouncedSearch]);
 
 	const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
@@ -56,6 +64,7 @@ export default function FinanceFilters({ events, filters, onApply }: FinanceFilt
 
 	const handleReset = () => {
 		setDraft(defaultDraft);
+		setSearchInput('');
 		onApply(defaultDraft);
 	};
 
@@ -148,13 +157,8 @@ export default function FinanceFilters({ events, filters, onApply }: FinanceFilt
 				</Label>
 				<Input
 					id="search"
-					value={draft.search}
-					onChange={(event) =>
-						setDraft((prev) => ({
-							...prev,
-							search: event.target.value,
-						}))
-					}
+					value={searchInput}
+					onChange={(event) => setSearchInput(event.target.value)}
 					placeholder="Nome, email ou ID Stripe"
 					className="bg-white dark:bg-slate-900"
 				/>
