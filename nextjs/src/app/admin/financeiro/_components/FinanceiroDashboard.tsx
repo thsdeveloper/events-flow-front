@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Download, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -146,7 +146,7 @@ export default function FinanceiroDashboard({
 
 	const globalError = exportError ?? transactionsErrorMessage;
 
-	const handleFiltersApply = (draft: FiltersDraft) => {
+	const handleFiltersApply = useCallback((draft: FiltersDraft) => {
 		setFilters({
 			range: draft.range,
 			status: draft.status,
@@ -157,20 +157,20 @@ export default function FinanceiroDashboard({
 		});
 		setExportError(null);
 		setPaginationState((prev) => ({ ...prev, page: 1 }));
-	};
+	}, []);
 
-	const handlePageChange = (page: number) => {
+	const handlePageChange = useCallback((page: number) => {
 		setExportError(null);
 		setPaginationState((prev) => ({ ...prev, page }));
-	};
+	}, []);
 
-	const handleSortChange = (sort: TransactionSort) => {
+	const handleSortChange = useCallback((sort: TransactionSort) => {
 		setSortState(sort);
 		setExportError(null);
 		setPaginationState((prev) => ({ ...prev, page: 1 }));
-	};
+	}, []);
 
-	const handleExport = async () => {
+	const handleExport = useCallback(async () => {
 		try {
 			setExportError(null);
 			setExporting(true);
@@ -204,15 +204,15 @@ export default function FinanceiroDashboard({
 		} finally {
 			setExporting(false);
 		}
-	};
+	}, [filters]);
 
-	const loadPayouts = async () => {
+	const loadPayouts = useCallback(async () => {
 		const result = await payoutsQuery.refetch();
 
 		if (result.error) {
 			console.error('Erro ao carregar repasses:', result.error);
 		}
-	};
+	}, [payoutsQuery]);
 
 	return (
 		<div className="space-y-6">

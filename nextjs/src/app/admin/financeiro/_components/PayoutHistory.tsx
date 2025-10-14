@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Loader2, Wallet } from 'lucide-react';
 import {
 	Card,
@@ -66,7 +67,7 @@ const statusBadge: Record<string, string> = {
 	canceled: 'text-gray-600 bg-gray-100 dark:text-gray-300 dark:bg-gray-800/40',
 };
 
-export default function PayoutHistory({ summary, isLoading, currencyFormatter }: PayoutHistoryProps) {
+function PayoutHistory({ summary, isLoading, currencyFormatter }: PayoutHistoryProps) {
 	const balance = summary?.balance;
 	const payouts = summary?.payouts ?? [];
 
@@ -150,3 +151,5 @@ export default function PayoutHistory({ summary, isLoading, currencyFormatter }:
 		</Card>
 	);
 }
+
+export default memo(PayoutHistory);

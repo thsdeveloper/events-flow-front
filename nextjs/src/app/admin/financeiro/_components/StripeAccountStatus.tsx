@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { AlertCircle, CheckCircle2, LinkIcon } from 'lucide-react';
 import type { OrganizerProfile } from '@/lib/auth/server-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +29,7 @@ const statusItems = [
 	},
 ] as const;
 
-export default function StripeAccountStatus({ organizer, payoutSummary }: StripeAccountStatusProps) {
+function StripeAccountStatus({ organizer, payoutSummary }: StripeAccountStatusProps) {
 	const hasStripeAccount = Boolean(organizer.stripe_account_id);
 	const pendingItems = statusItems.filter((item) => !organizer[item.key]);
 
@@ -113,3 +114,5 @@ export default function StripeAccountStatus({ organizer, payoutSummary }: Stripe
 		</Card>
 	);
 }
+
+export default memo(StripeAccountStatus);

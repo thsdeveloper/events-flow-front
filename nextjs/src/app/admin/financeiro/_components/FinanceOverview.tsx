@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { TrendingUp, Ticket, DollarSign, Loader2, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -20,7 +21,7 @@ interface FinanceOverviewProps {
 	currencyFormatter: Intl.NumberFormat;
 }
 
-export default function FinanceOverview({ metrics, isLoading, currencyFormatter }: FinanceOverviewProps) {
+function FinanceOverview({ metrics, isLoading, currencyFormatter }: FinanceOverviewProps) {
 	const cards = [
 		{
 			title: 'Vendas Totais',
@@ -99,3 +100,5 @@ export default function FinanceOverview({ metrics, isLoading, currencyFormatter 
 		</div>
 	);
 }
+
+export default memo(FinanceOverview);

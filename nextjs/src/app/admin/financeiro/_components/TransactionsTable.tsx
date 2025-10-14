@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import type { PaginationState, TransactionRow } from '@/lib/finance/server-fetchers';
 import type { TransactionSort, TransactionSortField } from '@/lib/finance/api-client';
@@ -72,7 +73,7 @@ function SortIcon({ active, direction }: { active: boolean; direction: 'asc' | '
 	);
 }
 
-export default function TransactionsTable({
+function TransactionsTable({
 	rows,
 	isLoading,
 	pagination,
@@ -248,3 +249,5 @@ export default function TransactionsTable({
 		</div>
 	);
 }
+
+export default memo(TransactionsTable);
