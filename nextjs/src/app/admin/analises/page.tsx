@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import { BarChart3 } from 'lucide-react'
 import { KPICards } from './_components/KPICards'
 import { SalesChart } from './_components/SalesChart'
