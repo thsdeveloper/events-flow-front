@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 
 /**
  * Hook to manage authentication token
@@ -8,7 +9,16 @@ export function useAuthToken() {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const hasFetched = useRef(false);
+  const router = useRouter();
+
+  const handleUnauthorized = () => {
+    setToken(null);
+    setError('Sessão expirada. Redirecionando para login...');
+    setIsRedirecting(true);
+    router.push('/login?redirect=/admin/participantes');
+  };
 
   useEffect(() => {
     // Only fetch once
@@ -19,10 +29,14 @@ export function useAuthToken() {
       try {
         const response = await fetch('/api/auth/token');
 
+        if (response.status === 401) {
+          handleUnauthorized();
+          return;
+        }
+
         if (!response.ok) {
           setError('Não autenticado');
-          
-return;
+          return;
         }
 
         const data = await response.json();
@@ -43,5 +57,5 @@ return;
     fetchToken();
   }, []);
 
-  return { token, isLoading, error };
+  return { token, isLoading, error, isRedirecting };
 }
