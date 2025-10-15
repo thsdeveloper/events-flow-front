@@ -21,7 +21,8 @@ export function useAuthToken() {
 
         if (!response.ok) {
           setError('Não autenticado');
-          return;
+          
+return;
         }
 
         const data = await response.json();

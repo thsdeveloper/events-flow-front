@@ -65,7 +65,8 @@ export function TicketDrawerForm({ open, onClose, ticket, onSaved, eventOptions 
       // Desabilita validação automática no submit para pegarmos os valores
       errorMap: (error, ctx) => {
         console.log('[Zod Validation Error]', error, ctx);
-        return { message: ctx.defaultError };
+        
+return { message: ctx.defaultError };
       },
     }),
     mode: 'onBlur',
@@ -153,11 +154,13 @@ export function TicketDrawerForm({ open, onClose, ticket, onSaved, eventOptions 
           message: error.message,
         });
       });
-      return false;
+      
+return false;
     }
 
     console.log('[TicketDrawerForm] Validation passed for step', currentStep);
-    return true;
+    
+return true;
   }, [currentStep, form]);
 
   const onSubmit = useCallback(async (data: TicketFormData, isDraft: boolean = false) => {
@@ -166,7 +169,8 @@ export function TicketDrawerForm({ open, onClose, ticket, onSaved, eventOptions 
     // Prevenir submit se não estiver na última etapa (exceto para rascunho)
     if (!isDraft && currentStep !== STEPS.length - 1) {
       console.log('[TicketDrawerForm] Not on last step, preventing submit');
-      return;
+      
+return;
     }
 
     setIsSubmitting(true);
@@ -250,6 +254,7 @@ export function TicketDrawerForm({ open, onClose, ticket, onSaved, eventOptions 
       toast({
         title: ticket ? 'Ingresso atualizado' : 'Ingresso criado',
         description: `O ingresso foi ${ticket ? 'atualizado' : 'criado'} com sucesso.`,
+        variant: 'success',
       });
 
       onSaved();
@@ -300,7 +305,8 @@ export function TicketDrawerForm({ open, onClose, ticket, onSaved, eventOptions 
         description: 'Por favor, corrija os erros antes de continuar.',
         variant: 'destructive',
       });
-      return;
+      
+return;
     }
 
     // Se passou na validação, submeter com os valores validados
@@ -314,7 +320,8 @@ export function TicketDrawerForm({ open, onClose, ticket, onSaved, eventOptions 
 
     if (!isValid) {
       console.log('[TicketDrawerForm] Validation failed, not advancing');
-      return;
+      
+return;
     }
 
     setCurrentStep((prev) => {
@@ -323,9 +330,11 @@ export function TicketDrawerForm({ open, onClose, ticket, onSaved, eventOptions 
       setVisitedSteps((visited) => {
         const updated = new Set(visited);
         updated.add(nextStep);
-        return updated;
+        
+return updated;
       });
-      return nextStep;
+      
+return nextStep;
     });
   }, [validateCurrentStep, currentStep]);
 
@@ -375,7 +384,7 @@ export function TicketDrawerForm({ open, onClose, ticket, onSaved, eventOptions 
 
         <Form {...form}>
           <form onSubmit={handleFormSubmit} onKeyDown={handleFormKeyDown} className="flex-1 flex flex-col">
-            <div className="flex-1 px-6 py-6 overflow-y-auto">
+            <div className="flex-1 p-6 overflow-y-auto">
               <div style={{ display: currentStep === 0 ? 'block' : 'none' }}>
                 <BasicInfoStepForm form={form} eventOptions={eventOptions} />
               </div>

@@ -4,7 +4,7 @@ import { getAuthenticatedClient } from '@/lib/directus/directus';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -21,7 +21,7 @@ export async function POST(
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await context.params;
 
     // Get the original ticket
     const originalTicket = await client.request(
@@ -62,7 +62,8 @@ export async function POST(
     return NextResponse.json(newTicket, { status: 201 });
   } catch (error) {
     console.error('Error duplicating ticket:', error);
-    return NextResponse.json(
+    
+return NextResponse.json(
       { error: 'Erro ao duplicar ingresso', message: (error as Error).message },
       { status: 500 }
     );

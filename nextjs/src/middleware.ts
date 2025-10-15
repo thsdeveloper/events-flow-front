@@ -18,6 +18,14 @@ import { getAuthClient, getAuthenticatedClient } from '@/lib/directus/directus';
 import { isOrganizerRole } from '@/lib/auth/roles';
 
 /**
+ * Generates a UUID v4 compatible with Edge Runtime
+ * Uses Web Crypto API instead of Node.js crypto module
+ */
+function generateRequestId(): string {
+	return crypto.randomUUID();
+}
+
+/**
  * Route configuration - Define which routes require authentication
  */
 const ROUTES = {
@@ -100,14 +108,23 @@ return null;
 export async function middleware(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
+	// Generate or extract requestId for distributed tracing
+	const requestId = request.headers.get('x-request-id') || generateRequestId();
+
 	// Skip middleware for static files and Next.js internals
 	if (isStaticOrInternal(pathname)) {
-		return NextResponse.next();
+		const response = NextResponse.next();
+		response.headers.set('x-request-id', requestId);
+		
+return response;
 	}
 
 	// Allow public routes
 	if (matchesRoute(pathname, ROUTES.public)) {
-		return NextResponse.next();
+		const response = NextResponse.next();
+		response.headers.set('x-request-id', requestId);
+		
+return response;
 	}
 
 	// Get tokens from cookies
@@ -202,6 +219,7 @@ export async function middleware(request: NextRequest) {
 		// Allow request and add user context headers for Server Components
 		const response = NextResponse.next();
 
+		response.headers.set('x-request-id', requestId);
 		response.headers.set('x-user-id', user.id);
 		response.headers.set('x-user-email', user.email || '');
 		response.headers.set('x-is-organizer', isOrganizer.toString());

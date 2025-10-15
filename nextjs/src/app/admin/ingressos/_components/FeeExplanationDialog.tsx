@@ -39,10 +39,10 @@ export function FeeExplanationDialog({ price, serviceFeeType, feeConfig }: FeeEx
           type="button"
           variant="ghost"
           size="sm"
-          className="h-8 w-8 p-0"
+          className="size-8 p-0"
           title="Como as taxas são calculadas?"
         >
-          <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-primary" />
+          <HelpCircle className="size-4 text-muted-foreground hover:text-primary" />
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">

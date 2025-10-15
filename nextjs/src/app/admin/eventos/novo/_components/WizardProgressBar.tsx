@@ -13,7 +13,7 @@ interface WizardProgressBarProps {
 
 export function WizardProgressBar({ steps, currentStep, visitedSteps, onStepSelect }: WizardProgressBarProps) {
 	const progress = Math.max(0, (currentStep / (steps.length - 1)) * 100);
-	const estimatedTime = steps.slice(currentStep).reduce((sum, step) => sum + step.estimatedMinutes, 0);
+	const estimatedTime = steps.slice(currentStep).reduce((sum, step) => sum + (step.estimatedMinutes ?? 0), 0);
 
 	return (
 		<div className="space-y-3">

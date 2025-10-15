@@ -105,7 +105,7 @@ export default function InstallmentPaymentPage({ registrationId }: InstallmentPa
       <div className="container max-w-2xl py-8">
         <div className="flex justify-center items-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full size-12 border-b-2 border-primary mx-auto mb-4"></div>
             <p className="text-muted-foreground">Gerando código Pix...</p>
           </div>
         </div>
@@ -196,7 +196,7 @@ export default function InstallmentPaymentPage({ registrationId }: InstallmentPa
                 alt="QR Code Pix"
                 width={256}
                 height={256}
-                className="w-64 h-64"
+                className="size-64"
               />
             </div>
             <p className="text-sm text-muted-foreground text-center">

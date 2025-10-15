@@ -107,7 +107,8 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching tickets:', error);
-    return NextResponse.json(
+    
+return NextResponse.json(
       { error: 'Erro ao carregar ingressos' },
       { status: 500 }
     );
@@ -165,7 +166,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(newTicket, { status: 201 });
   } catch (error) {
     console.error('Error creating ticket:', error);
-    return NextResponse.json(
+    
+return NextResponse.json(
       { error: 'Erro ao criar ingresso', message: (error as Error).message },
       { status: 500 }
     );

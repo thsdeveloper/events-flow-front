@@ -32,7 +32,8 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching filter options:', error);
-    return NextResponse.json(
+    
+return NextResponse.json(
       { error: 'Erro ao carregar opções de filtro' },
       { status: 500 }
     );

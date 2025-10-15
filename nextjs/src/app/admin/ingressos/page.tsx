@@ -73,7 +73,8 @@ export default function IngressosPage() {
         setError(tokenError);
         setIsLoading(false);
       }
-      return;
+      
+return;
     }
 
     let cancelled = false;

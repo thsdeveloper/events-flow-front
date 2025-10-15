@@ -89,6 +89,7 @@ export function OrganizerRequestForm({ user, onSuccess }: OrganizerRequestFormPr
 			toast({
 				title: 'Solicitação enviada',
 				description: 'Vamos analisar seus dados e liberar o acesso em breve.',
+				variant: 'success',
 			});
 
 			form.reset();

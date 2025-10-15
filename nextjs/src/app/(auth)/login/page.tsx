@@ -3,10 +3,23 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LogIn, Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import Link from 'next/link';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { AuthButton } from '@/components/auth/AuthButton';
 import { AuthLink } from '@/components/auth/AuthLink';
+import { httpClient } from '@/lib/http-client';
+
+interface LoginResponse {
+	success: boolean;
+	user: {
+		id: string;
+		email: string;
+		first_name: string;
+		last_name: string;
+		role: unknown;
+	};
+	isOrganizer: boolean;
+	redirect: string;
+}
 
 export default function LoginPage() {
 	const router = useRouter();
@@ -14,37 +27,22 @@ export default function LoginPage() {
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
 	const [showPassword, setShowPassword] = useState(false);
-	const [error, setError] = useState('');
 	const [isLoading, setIsLoading] = useState(false);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		setError('');
 		setIsLoading(true);
 
 		try {
-			const response = await fetch('/api/auth/login', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				credentials: 'include',
-				body: JSON.stringify({ email, password }),
+			// httpClient mostra toast automaticamente em caso de erro
+			const data = await httpClient.post<LoginResponse>('/api/auth/login', {
+				email,
+				password,
 			});
-
-			const data = await response.json();
-
-			if (!response.ok) {
-				throw new Error(data.error || 'Falha ao fazer login');
-			}
-
+			// Sucesso - redireciona
 			const redirectUrl = searchParams.get('redirect') || data.redirect || '/perfil';
-
 			await new Promise(resolve => setTimeout(resolve, 100));
-
 			window.location.href = redirectUrl;
-		} catch (err: any) {
-			setError(err.message || 'Erro ao fazer login');
 		} finally {
 			setIsLoading(false);
 		}
@@ -56,15 +54,6 @@ export default function LoginPage() {
 			subtitle="Entre com suas credenciais para acessar sua conta"
 		>
 			<form onSubmit={handleSubmit} className="space-y-6">
-				{error && (
-					<div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl text-sm flex items-start gap-2">
-						<svg className="size-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-							<path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-						</svg>
-						<span>{error}</span>
-					</div>
-				)}
-
 				<div className="space-y-2">
 					<label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
 						Email

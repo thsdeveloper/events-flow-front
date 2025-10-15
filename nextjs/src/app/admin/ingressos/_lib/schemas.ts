@@ -58,7 +58,8 @@ export const pricingSchema = z.object({
     if (data.allow_installments) {
       return data.max_installments && data.max_installments >= 2 && data.max_installments <= 12;
     }
-    return true;
+    
+return true;
   },
   {
     message: 'Ao permitir parcelamento, defina entre 2 e 12 parcelas',
@@ -69,7 +70,8 @@ export const pricingSchema = z.object({
     if (data.allow_installments) {
       return data.min_amount_for_installments && data.min_amount_for_installments > 0;
     }
-    return true;
+    
+return true;
   },
   {
     message: 'Ao permitir parcelamento, defina um valor mínimo',
@@ -107,7 +109,8 @@ export const availabilitySchema = z.object({
     if (data.min_quantity_per_purchase && data.max_quantity_per_purchase) {
       return data.max_quantity_per_purchase >= data.min_quantity_per_purchase;
     }
-    return true;
+    
+return true;
   },
   {
     message: 'A quantidade máxima por compra deve ser maior ou igual à quantidade mínima',
@@ -128,7 +131,8 @@ export const salePeriodSchema = z.object({
     if (data.sale_start_date && data.sale_end_date) {
       return new Date(data.sale_start_date) < new Date(data.sale_end_date);
     }
-    return true;
+    
+return true;
   },
   {
     message: 'A data de início das vendas deve ser anterior à data de término',
@@ -234,7 +238,8 @@ export const ticketFormSchema = z.object({
     if (data.allow_installments) {
       return data.max_installments && data.max_installments >= 2 && data.max_installments <= 12;
     }
-    return true;
+    
+return true;
   },
   {
     message: 'Ao permitir parcelamento, defina entre 2 e 12 parcelas',
@@ -247,7 +252,8 @@ export const ticketFormSchema = z.object({
     if (data.allow_installments) {
       return data.min_amount_for_installments && data.min_amount_for_installments > 0;
     }
-    return true;
+    
+return true;
   },
   {
     message: 'Ao permitir parcelamento, defina um valor mínimo',
@@ -260,7 +266,8 @@ export const ticketFormSchema = z.object({
     if (data.min_quantity_per_purchase && data.max_quantity_per_purchase) {
       return data.max_quantity_per_purchase >= data.min_quantity_per_purchase;
     }
-    return true;
+    
+return true;
   },
   {
     message: 'A quantidade máxima por compra deve ser maior ou igual à quantidade mínima',
@@ -273,7 +280,8 @@ export const ticketFormSchema = z.object({
     if (data.sale_start_date && data.sale_end_date) {
       return new Date(data.sale_start_date) < new Date(data.sale_end_date);
     }
-    return true;
+    
+return true;
   },
   {
     message: 'A data de início das vendas deve ser anterior à data de término',

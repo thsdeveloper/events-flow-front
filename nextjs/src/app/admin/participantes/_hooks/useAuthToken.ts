@@ -31,12 +31,14 @@ export function useAuthToken() {
 
         if (response.status === 401) {
           handleUnauthorized();
-          return;
+          
+return;
         }
 
         if (!response.ok) {
           setError('Não autenticado');
-          return;
+          
+return;
         }
 
         const data = await response.json();

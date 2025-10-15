@@ -114,6 +114,7 @@ export function EditParticipantDialog({
       toast({
         title: 'Participante atualizado! ✓',
         description: `As informações de ${data.participant_name} foram atualizadas com sucesso`,
+        variant: 'success',
       });
 
       onOpenChange(false);

@@ -28,7 +28,8 @@ const toNumber = (value: number | string | null | undefined): number => {
 
   if (typeof value === 'string') {
     const parsed = parseFloat(value);
-    return Number.isFinite(parsed) ? parsed : 0;
+    
+return Number.isFinite(parsed) ? parsed : 0;
   }
 
   return 0;

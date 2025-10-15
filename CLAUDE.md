@@ -114,3 +114,83 @@ This runs `src/lib/directus/generateDirectusTypes.ts` using the `directus-sdk-ty
 - **Type Safety:** Full TypeScript coverage with auto-generated Directus schema types
 - **UI Framework:** Tailwind CSS + Shadcn components + Radix UI primitives
 - **Validation:** Zod schemas for form validation (built dynamically from Directus field config)
+- **Error Handling:** RFC 7807 Problem Details standard with automatic toast notifications (see Error Handling section below)
+
+## Error Handling (RFC 7807)
+
+This project implements a complete RFC 7807 (Problem Details for HTTP APIs) error handling system with automatic toast notifications. See `nextjs/IMPLEMENTACAO_ERRO.md` for full documentation.
+
+### Quick Start
+
+**1. API Routes (Backend):**
+```typescript
+import { withApi } from '@/lib/api'
+import { fromDirectusError } from '@/lib/errors'
+
+export const GET = withApi(async (request) => {
+  try {
+    const data = await fetchFromDirectus()
+    return Response.json(data)
+  } catch (error) {
+    throw fromDirectusError(error, request.headers.get('x-request-id'))
+  }
+})
+```
+
+**2. Client Components (Frontend):**
+```typescript
+import { httpClient } from '@/lib/http-client'
+import { toastSuccess } from '@/lib/toast-helpers'
+
+async function handleSubmit() {
+  // Toast is shown automatically on error
+  await httpClient.post('/api/posts', data)
+
+  toastSuccess({
+    title: 'Post criado!',
+    description: 'Seu post foi publicado com sucesso.'
+  })
+}
+```
+
+### Core Files
+
+- **`src/lib/errors.ts`** - AppError class, Directus error mapping, validation helpers
+- **`src/lib/api.ts`** - `withApi` wrapper for API Routes (Edge Runtime compatible)
+- **`src/lib/http.ts`** - `apiFetch` client with automatic Bearer token injection and cookie support
+- **`src/lib/http-client.ts`** - `httpClient` with automatic toast on errors
+- **`src/lib/toast-problem.ts`** - Converts RFC 7807 errors to user-friendly toasts
+- **`src/lib/toast-helpers.ts`** - Toast helpers: `toastSuccess`, `toastError`, `toastWarning`, `toastInfo`
+- **`src/middleware.ts`** - Generates and propagates `x-request-id` for request tracing
+
+### Toast Variants
+
+All toasts include icons and appropriate colors:
+
+| Variant       | Color   | Icon         | Usage                    |
+|---------------|---------|--------------|--------------------------|
+| `success`     | Green   | CheckCircle2 | Successful operations    |
+| `destructive` | Red     | XCircle      | Errors and failures      |
+| `warning`     | Yellow  | AlertCircle  | Warnings                 |
+| `info`        | Blue    | Info         | General information      |
+
+### Key Features
+
+- ✅ **Automatic authentication**: `httpClient` reads `access_token` cookie and adds `Authorization: Bearer <token>` header
+- ✅ **FormData support**: Handles file uploads correctly without JSON serialization
+- ✅ **SSR-safe**: Works in both client and server components
+- ✅ **Edge Runtime compatible**: Uses Web Crypto API for request ID generation
+- ✅ **Directus integration**: Automatic mapping of Directus errors to RFC 7807 format
+- ✅ **Portuguese messages**: All error messages in PT-BR with proper formatting
+- ✅ **Request tracing**: Every request has a unique `x-request-id` for debugging
+
+### Migration Checklist
+
+When migrating existing code to use the error handling system:
+
+1. **API Routes**: Replace manual error handling with `withApi` wrapper
+2. **Client fetches**: Replace `fetch()` with `httpClient.get/post/patch/delete`
+3. **Success toasts**: Replace `toast({ variant: 'success' })` with `toastSuccess()`
+4. **Remove manual error handling**: Let `httpClient` handle errors automatically via toast
+
+For complete documentation, examples, and advanced usage, see `nextjs/IMPLEMENTACAO_ERRO.md`.
