@@ -3,6 +3,8 @@ import { getAuthenticatedClient } from '@/lib/directus/directus';
 import { readMe } from '@directus/sdk';
 import { getOrganizerByUserId, fetchParticipants, fetchParticipantMetrics } from '@/app/admin/participantes/_lib/queries';
 import type { ParticipantFilters } from '@/app/admin/participantes/_lib/types';
+import { clearAuthCookies } from '@/lib/auth/cookies';
+import { isAuthenticationError, parseDirectusError } from '@/lib/directus/error-utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -68,7 +70,22 @@ export async function GET(request: NextRequest) {
       metrics,
     });
   } catch (error) {
-    console.error('Error in GET /api/admin/participantes:', error);
+    if (isAuthenticationError(error)) {
+      try {
+        await clearAuthCookies();
+      } catch (cookieError) {
+        console.error('Failed to clear auth cookies after auth error in GET /api/admin/participantes:', cookieError);
+      }
+
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    const parsedError = parseDirectusError(error);
+
+    console.error('Error in GET /api/admin/participantes:', {
+      error,
+      parsedError,
+    });
 
     return NextResponse.json(
       { error: 'Erro ao buscar participantes' },

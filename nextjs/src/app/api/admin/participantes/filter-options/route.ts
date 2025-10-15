@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedClient } from '@/lib/directus/directus';
 import { readMe, readItems } from '@directus/sdk';
 import { getOrganizerByUserId } from '@/app/admin/participantes/_lib/queries';
+import { clearAuthCookies } from '@/lib/auth/cookies';
+import { isAuthenticationError, parseDirectusError } from '@/lib/directus/error-utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -61,7 +63,25 @@ export async function GET(request: NextRequest) {
       ticketTypes: ticketTypes || [],
     });
   } catch (error) {
-    console.error('Error in GET /api/admin/participantes/filter-options:', error);
+    if (isAuthenticationError(error)) {
+      try {
+        await clearAuthCookies();
+      } catch (cookieError) {
+        console.error(
+          'Failed to clear auth cookies after auth error in GET /api/admin/participantes/filter-options:',
+          cookieError
+        );
+      }
+
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    const parsedError = parseDirectusError(error);
+
+    console.error('Error in GET /api/admin/participantes/filter-options:', {
+      error,
+      parsedError,
+    });
 
     return NextResponse.json(
       { error: 'Erro ao buscar opções de filtro' },
