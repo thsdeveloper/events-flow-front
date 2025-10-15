@@ -156,7 +156,8 @@ export function MultiStepFormWizard({ user, onSuccess }: MultiStepFormWizardProp
 				form.reset(parsed);
 				toast({
 					title: 'Rascunho recuperado',
-					description: 'Continuando de onde você parou.'
+					description: 'Continuando de onde você parou.',
+					variant: 'success',
 				});
 			} catch (e) {
 				console.error('Error loading draft:', e);
@@ -221,6 +222,7 @@ export function MultiStepFormWizard({ user, onSuccess }: MultiStepFormWizardProp
 			toast({
 				title: 'Solicitação enviada! 🎉',
 				description: 'Vamos analisar seus dados e liberar o acesso em breve.',
+				variant: 'success',
 			});
 
 			onSuccess();

@@ -160,6 +160,7 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 				toast({
 					title: 'Perfil de organizador atualizado',
 					description: 'Suas informações foram atualizadas com sucesso.',
+					variant: 'success',
 				});
 			} else {
 				// Create new organizer
@@ -174,6 +175,7 @@ export function OrganizerProfileForm({ userId }: OrganizerProfileFormProps) {
 				toast({
 					title: 'Perfil de organizador criado',
 					description: 'Seu perfil de organizador foi criado com sucesso.',
+					variant: 'success',
 				});
 			}
 

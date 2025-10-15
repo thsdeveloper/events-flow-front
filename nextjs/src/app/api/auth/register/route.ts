@@ -1,44 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { withApi, validateBody } from '@/lib/api';
+import { AppError } from '@/lib/errors';
 import { getDefaultClientRoleId } from '@/lib/auth/roles';
 
-export async function POST(request: NextRequest) {
+const registerSchema = z.object({
+	email: z.string().email('Email inválido'),
+	password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
+	firstName: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres'),
+	lastName: z.string().min(2, 'Sobrenome deve ter no mínimo 2 caracteres'),
+});
+
+export const POST = withApi(async (request: NextRequest) => {
+	const { email, password, firstName, lastName } = await validateBody(request, registerSchema);
+
+	const roleId = getDefaultClientRoleId();
+
+	if (!roleId) {
+		console.error('Missing Directus client role configuration.');
+		throw new AppError({
+			message: 'Configuração do servidor inválida',
+			status: 500,
+			code: 'MISSING_ROLE_CONFIG',
+			requestId: request.headers.get('x-request-id') || undefined,
+		});
+	}
+
+	const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL as string;
+	const publicToken = process.env.DIRECTUS_PUBLIC_TOKEN;
+
+	if (!publicToken) {
+		throw new AppError({
+			message: 'Configuração do servidor inválida',
+			status: 500,
+			code: 'MISSING_PUBLIC_TOKEN',
+			requestId: request.headers.get('x-request-id') || undefined,
+		});
+	}
+
 	try {
-		const { email, password, firstName, lastName } = await request.json();
-
-		// Validate input
-		if (!email || !password || !firstName || !lastName) {
-			return NextResponse.json(
-				{ error: 'Todos os campos são obrigatórios' },
-				{ status: 400 }
-			);
-		}
-
-		const roleId = getDefaultClientRoleId();
-
-		if (!roleId) {
-			console.error('Missing Directus client role configuration.');
-
-			return NextResponse.json(
-				{ error: 'Configuração do servidor inválida' },
-				{ status: 500 }
-			);
-		}
-
-		const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL as string;
-
-		// Note: Public registration requires either:
-		// 1. A public role with permission to create users, OR
-		// 2. Directus public registration endpoint (if enabled)
-		// For now, using public token which should have create user permission
-		const publicToken = process.env.DIRECTUS_PUBLIC_TOKEN;
-
-		if (!publicToken) {
-			return NextResponse.json(
-				{ error: 'Configuração do servidor inválida' },
-				{ status: 500 }
-			);
-		}
-
 		// Create user with direct fetch
 		const createUserResponse = await fetch(`${directusUrl}/users`, {
 			method: 'POST',
@@ -58,7 +58,14 @@ export async function POST(request: NextRequest) {
 
 		if (!createUserResponse.ok) {
 			const errorData = await createUserResponse.json();
-			throw new Error(errorData.errors?.[0]?.message || 'Erro ao criar usuário');
+			const errorMessage = errorData.errors?.[0]?.message || 'Erro ao criar usuário';
+
+			throw new AppError({
+				message: errorMessage,
+				status: createUserResponse.status,
+				code: errorData.errors?.[0]?.extensions?.code || 'USER_CREATE_ERROR',
+				requestId: request.headers.get('x-request-id') || undefined,
+			});
 		}
 
 		const createUserData = await createUserResponse.json();
@@ -77,22 +84,17 @@ export async function POST(request: NextRequest) {
 			},
 			{ status: 201 }
 		);
-	} catch (error: any) {
-		console.error('Registration error:', error);
-
-		// Handle specific Directus errors
-		if (error.errors) {
-			const firstError = error.errors[0];
-			
-return NextResponse.json(
-				{ error: firstError.message || 'Erro ao criar usuário' },
-				{ status: 400 }
-			);
+	} catch (error) {
+		if (error instanceof AppError) {
+			throw error;
 		}
 
-		return NextResponse.json(
-			{ error: 'Erro ao criar usuário. Tente novamente.' },
-			{ status: 500 }
-		);
+		throw new AppError({
+			message: error instanceof Error ? error.message : 'Erro ao criar usuário',
+			status: 500,
+			code: 'REGISTRATION_ERROR',
+			requestId: request.headers.get('x-request-id') || undefined,
+			cause: error,
+		});
 	}
-}
+});

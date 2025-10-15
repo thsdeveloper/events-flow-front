@@ -109,7 +109,8 @@ export const SalePeriodStepForm = memo(function SalePeriodStepForm({ form, event
 
   const eventStartLabel = useMemo(() => {
     if (!eventStartDate) return null;
-    return eventDateFormatter.format(eventStartDate);
+    
+return eventDateFormatter.format(eventStartDate);
   }, [eventStartDate, eventDateFormatter]);
 
   return (

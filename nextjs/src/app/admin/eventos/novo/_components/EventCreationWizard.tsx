@@ -370,6 +370,7 @@ export function EventCreationWizard() {
 			toast({
 				title: 'Imagem sugerida com sucesso',
 				description: 'Revise o resultado e ajuste se precisar.',
+				variant: 'success',
 			});
 		} catch (error) {
 			setCoverAiError(error instanceof Error ? error.message : 'Não foi possível gerar a capa agora.');
@@ -446,7 +447,8 @@ export function EventCreationWizard() {
 					description: 'Por favor, revise todos os campos obrigatórios.',
 					variant: 'destructive',
 				});
-				return;
+				
+return;
 			}
 
 			if (!client) {
@@ -540,6 +542,7 @@ export function EventCreationWizard() {
 					description: values.publish_after_create
 						? 'Seu evento está no ar. Que tal compartilhar agora?'
 						: 'O evento foi salvo como rascunho. Publique quando estiver pronto.',
+					variant: 'success',
 				});
 
 				setShowCelebration(true);

@@ -53,7 +53,7 @@ export function DatePicker({
             className
           )}
         >
-          <CalendarIcon className="mr-2 h-4 w-4" />
+          <CalendarIcon className="mr-2 size-4" />
           {date ? format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : placeholder}
         </Button>
       </PopoverTrigger>
@@ -68,7 +68,8 @@ export function DatePicker({
           disabled={(date) => {
             if (minDate && date < minDate) return true;
             if (maxDate && date > maxDate) return true;
-            return false;
+            
+return false;
           }}
           initialFocus
           locale={ptBR}

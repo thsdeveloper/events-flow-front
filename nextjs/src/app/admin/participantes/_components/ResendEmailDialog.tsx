@@ -65,6 +65,7 @@ export function ResendEmailDialog({
       toast({
         title: 'Email reenviado',
         description: 'O email de confirmação foi reenviado com sucesso',
+        variant: 'success',
       });
 
       handleClose();

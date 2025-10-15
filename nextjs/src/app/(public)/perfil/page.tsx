@@ -396,6 +396,7 @@ return Object.values(nextErrors).every((error) => !error);
 			toast({
 				title: 'Pré-visualização pronta',
 				description: 'Salve o perfil para confirmar a nova foto.',
+				variant: 'success',
 			});
 		},
 		[toast],
@@ -428,6 +429,7 @@ return Object.values(nextErrors).every((error) => !error);
 			toast({
 				title: 'Preparando arquivo',
 				description: 'Estamos gerando um pacote com seus dados.',
+				variant: 'success',
 			});
 
 			// Simula processamento assíncrono para manter feedback imediato.
@@ -436,6 +438,7 @@ return Object.values(nextErrors).every((error) => !error);
 			toast({
 				title: 'Exportação concluída',
 				description: 'Você receberá um e-mail com a cópia solicitada em instantes.',
+				variant: 'success',
 			});
 		} catch (error) {
 			console.error('Error exporting data:', error);
@@ -489,6 +492,7 @@ return Object.values(nextErrors).every((error) => !error);
 			toast({
 				title: 'Perfil atualizado',
 				description: 'Suas informações foram salvas com sucesso.',
+				variant: 'success',
 			});
 		} catch (error) {
 			console.error('Error saving personal data:', error);
@@ -565,6 +569,7 @@ return Object.values(nextErrors).every((error) => !error);
 				toast({
 					title: 'Senha alterada',
 					description: 'Use a nova senha no próximo acesso.',
+					variant: 'success',
 				});
 			} catch (error) {
 				console.error('Error changing password:', error);

@@ -71,6 +71,7 @@ export function TicketsTable({
       toast({
         title: 'Ingresso excluído',
         description: 'O ingresso foi excluído com sucesso.',
+        variant: 'success',
       });
 
       onDataRefresh();
@@ -106,6 +107,7 @@ export function TicketsTable({
       toast({
         title: newStatus === 'active' ? 'Ingresso ativado' : 'Ingresso desativado',
         description: `O ingresso foi ${newStatus === 'active' ? 'ativado' : 'desativado'} com sucesso.`,
+        variant: 'success',
       });
 
       onDataRefresh();
@@ -133,6 +135,7 @@ export function TicketsTable({
       toast({
         title: 'Ingresso duplicado',
         description: 'O ingresso foi duplicado com sucesso.',
+        variant: 'success',
       });
 
       onDataRefresh();

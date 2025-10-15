@@ -91,6 +91,7 @@ export function CancelRegistrationDialog({
       toast({
         title: 'Inscrição cancelada',
         description: 'A inscrição foi cancelada com sucesso',
+        variant: 'success',
       });
 
       handleClose();

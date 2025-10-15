@@ -76,6 +76,7 @@ return;
       toast({
         title: 'Exportação iniciada',
         description: `${data.length} participante${data.length > 1 ? 's' : ''} exportado${data.length > 1 ? 's' : ''} com sucesso`,
+        variant: 'success',
       });
     } catch (error: any) {
       console.error('Error exporting participants:', error);

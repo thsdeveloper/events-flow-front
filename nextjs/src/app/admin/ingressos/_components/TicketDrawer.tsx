@@ -97,7 +97,8 @@ export function TicketDrawer({ open, onClose, ticket, onSaved, eventOptions }: T
             description: 'Selecione um evento',
             variant: 'destructive',
           });
-          return false;
+          
+return false;
         }
         if (!formData.title || formData.title.length < 3) {
           toast({
@@ -105,9 +106,11 @@ export function TicketDrawer({ open, onClose, ticket, onSaved, eventOptions }: T
             description: 'Digite um nome com pelo menos 3 caracteres',
             variant: 'destructive',
           });
-          return false;
+          
+return false;
         }
-        return true;
+        
+return true;
 
       case 2:
         if (!formData.price || formData.price <= 0) {
@@ -116,7 +119,8 @@ export function TicketDrawer({ open, onClose, ticket, onSaved, eventOptions }: T
             description: 'Digite um preço maior que zero',
             variant: 'destructive',
           });
-          return false;
+          
+return false;
         }
         if (formData.allow_installments) {
           if (!formData.max_installments || formData.max_installments < 2 || formData.max_installments > 12) {
@@ -125,7 +129,8 @@ export function TicketDrawer({ open, onClose, ticket, onSaved, eventOptions }: T
               description: 'O número de parcelas deve estar entre 2 e 12',
               variant: 'destructive',
             });
-            return false;
+            
+return false;
           }
           if (!formData.min_amount_for_installments || formData.min_amount_for_installments <= 0) {
             toast({
@@ -133,10 +138,12 @@ export function TicketDrawer({ open, onClose, ticket, onSaved, eventOptions }: T
               description: 'Digite um valor mínimo válido para parcelamento',
               variant: 'destructive',
             });
-            return false;
+            
+return false;
           }
         }
-        return true;
+        
+return true;
 
       case 3:
         if (!formData.quantity || formData.quantity < 1) {
@@ -145,7 +152,8 @@ export function TicketDrawer({ open, onClose, ticket, onSaved, eventOptions }: T
             description: 'Digite uma quantidade maior que zero',
             variant: 'destructive',
           });
-          return false;
+          
+return false;
         }
         if (
           formData.min_quantity_per_purchase &&
@@ -157,9 +165,11 @@ export function TicketDrawer({ open, onClose, ticket, onSaved, eventOptions }: T
             description: 'A quantidade máxima deve ser maior que a mínima',
             variant: 'destructive',
           });
-          return false;
+          
+return false;
         }
-        return true;
+        
+return true;
 
       case 4:
         if (formData.sale_start_date && formData.sale_end_date) {
@@ -169,10 +179,12 @@ export function TicketDrawer({ open, onClose, ticket, onSaved, eventOptions }: T
               description: 'A data de início deve ser anterior à data de fim',
               variant: 'destructive',
             });
-            return false;
+            
+return false;
           }
         }
-        return true;
+        
+return true;
 
       default:
         return true;
@@ -222,6 +234,7 @@ export function TicketDrawer({ open, onClose, ticket, onSaved, eventOptions }: T
       toast({
         title: ticket ? 'Ingresso atualizado' : 'Ingresso criado',
         description: `O ingresso foi ${ticket ? 'atualizado' : 'criado'} com sucesso.`,
+        variant: 'success',
       });
 
       onSaved();
@@ -276,7 +289,7 @@ export function TicketDrawer({ open, onClose, ticket, onSaved, eventOptions }: T
           </div>
         </SheetHeader>
 
-        <div className="px-6 py-6">
+        <div className="p-6">
           {currentStep === 1 && (
             <BasicInfoStep
               formData={formData}

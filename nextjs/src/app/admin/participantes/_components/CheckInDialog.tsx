@@ -51,6 +51,7 @@ export function CheckInDialog({ participant, open, onOpenChange, onSuccess }: Ch
       toast({
         title: 'Check-in realizado! ✓',
         description: `${participant.participant_name} confirmou presença no evento`,
+        variant: 'success',
       });
 
       onOpenChange(false);
@@ -88,6 +89,7 @@ export function CheckInDialog({ participant, open, onOpenChange, onSuccess }: Ch
       toast({
         title: 'Check-in desfeito',
         description: `${participant.participant_name} voltou para status confirmado`,
+        variant: 'warning',
       });
 
       onOpenChange(false);

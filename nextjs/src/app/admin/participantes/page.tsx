@@ -59,7 +59,8 @@ export default function ParticipantesPage() {
         if (!prev) {
           router.push('/login?redirect=/admin/participantes');
         }
-        return true;
+        
+return true;
       });
     },
     [router]
@@ -85,7 +86,8 @@ export default function ParticipantesPage() {
 
         if (response.status === 401) {
           handleUnauthorized();
-          return;
+          
+return;
         }
 
         if (response.ok) {
@@ -147,7 +149,8 @@ export default function ParticipantesPage() {
             keepLoading = true;
             handleUnauthorized();
           }
-          return;
+          
+return;
         }
 
         if (cancelled) return;

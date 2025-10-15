@@ -274,6 +274,7 @@ export default function TicketFormModal({
 				description: editingTicket
 					? 'Ingresso atualizado com sucesso!'
 					: 'Ingresso criado com sucesso!',
+				variant: 'success',
 			});
 
 			form.reset();

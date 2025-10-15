@@ -6,7 +6,7 @@ const SERVICE_FEE_PERCENTAGE = 0.05;
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -24,7 +24,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { id } = params;
+    const { id } = await context.params;
 
     const normalizedPrice = typeof body.price === 'number' && Number.isFinite(body.price)
       ? body.price
@@ -54,7 +54,8 @@ export async function PATCH(
     return NextResponse.json(updatedTicket);
   } catch (error) {
     console.error('Error updating ticket:', error);
-    return NextResponse.json(
+    
+return NextResponse.json(
       { error: 'Erro ao atualizar ingresso', message: (error as Error).message },
       { status: 500 }
     );
@@ -63,7 +64,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -80,14 +81,15 @@ export async function DELETE(
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await context.params;
 
     await client.request(deleteItem('event_tickets', id));
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting ticket:', error);
-    return NextResponse.json(
+    
+return NextResponse.json(
       { error: 'Erro ao excluir ingresso', message: (error as Error).message },
       { status: 500 }
     );

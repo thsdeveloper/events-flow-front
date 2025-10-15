@@ -1,20 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readMe } from '@directus/sdk';
+import { z } from 'zod';
+import { withApi, validateBody } from '@/lib/api';
+import { fromDirectusError, createUnauthorizedError, AppError } from '@/lib/errors';
 import { getAuthClient } from '@/lib/directus/directus';
 import { setAuthCookies } from '@/lib/auth/cookies';
 import { isOrganizerRole } from '@/lib/auth/roles';
 
-export async function POST(request: NextRequest) {
+/**
+ * Schema de validação para login
+ */
+const loginSchema = z.object({
+	email: z.string().email('Email inválido'),
+	password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
+});
+
+export const POST = withApi(async (request: NextRequest) => {
+	// Valida body com Zod
+	const { email, password } = await validateBody(request, loginSchema);
+
 	try {
-		const { email, password } = await request.json();
-
-		if (!email || !password) {
-			return NextResponse.json(
-				{ error: 'Email e senha são obrigatórios' },
-				{ status: 400 }
-			);
-		}
-
 		// Use the auth client helper (includes rate limiting and retry logic)
 		const client = getAuthClient();
 
@@ -22,9 +27,9 @@ export async function POST(request: NextRequest) {
 		const authResult = await client.login(email, password);
 
 		if (!authResult.access_token) {
-			return NextResponse.json(
-				{ error: 'Falha ao fazer login' },
-				{ status: 401 }
+			throw createUnauthorizedError(
+				'Credenciais inválidas',
+				request.headers.get('x-request-id') || undefined
 			);
 		}
 
@@ -45,10 +50,21 @@ export async function POST(request: NextRequest) {
 
 		// ⭐ Validate tokens
 		if (!authResult.refresh_token) {
-			throw new Error('No refresh token received from authentication');
+			throw new AppError({
+				message: 'Token de atualização não recebido',
+				status: 500,
+				code: 'MISSING_REFRESH_TOKEN',
+				requestId: request.headers.get('x-request-id') || undefined,
+			});
 		}
+
 		if (authResult.expires === null || authResult.expires === undefined) {
-			throw new Error('No expiration time received from authentication');
+			throw new AppError({
+				message: 'Tempo de expiração não recebido',
+				status: 500,
+				code: 'MISSING_EXPIRATION',
+				requestId: request.headers.get('x-request-id') || undefined,
+			});
 		}
 
 		// ⭐ Set httpOnly cookies (secure, not accessible via JavaScript)
@@ -71,22 +87,8 @@ export async function POST(request: NextRequest) {
 			isOrganizer,
 			redirect: redirectUrl,
 		});
-	} catch (error: any) {
-		console.error('Login error:', error);
-
-		// Handle Directus SDK errors
-		if (error.errors) {
-			const firstError = error.errors[0];
-
-			return NextResponse.json(
-				{ error: firstError.message || 'Credenciais inválidas' },
-				{ status: 401 }
-			);
-		}
-
-		return NextResponse.json(
-			{ error: 'Erro ao fazer login. Tente novamente.' },
-			{ status: 500 }
-		);
+	} catch (error) {
+		// Converte erro do Directus para AppError (RFC 7807)
+		throw fromDirectusError(error, request.headers.get('x-request-id') || undefined);
 	}
-}
+});

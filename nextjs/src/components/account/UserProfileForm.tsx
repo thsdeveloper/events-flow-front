@@ -101,6 +101,7 @@ export function UserProfileForm({ user }: UserProfileFormProps) {
 			toast({
 				title: 'Perfil atualizado',
 				description: 'Suas informações foram atualizadas com sucesso.',
+				variant: 'success',
 			});
 
 			// Reset avatar file state

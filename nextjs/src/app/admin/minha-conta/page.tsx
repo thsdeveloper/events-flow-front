@@ -25,6 +25,8 @@ import { useOrganizer } from '@/hooks/useOrganizer';
 import { useServerAuth } from '@/hooks/useServerAuth';
 import { useToast } from '@/hooks/use-toast';
 import { StripeOnboardingButton } from '@/components/organizer/StripeOnboardingButton';
+import { httpClient } from '@/lib/http-client';
+import { toastSuccess } from '@/lib/toast-helpers';
 
 type Tab = 'perfil' | 'pagamentos';
 
@@ -76,13 +78,10 @@ export default function AdminAccountPage() {
 
 			setLoadingStats(true);
 			try {
-				const response = await fetch(`/api/organizer/stats?organizerId=${organizer.id}`);
-				if (response.ok) {
-					const data = await response.json();
-					setStats(data.stats);
-				}
-			} catch (error) {
-				console.error('Erro ao carregar estatísticas:', error);
+				const data = await httpClient.get<{ stats: OrganizerStats }>(
+					`/api/organizer/stats?organizerId=${organizer.id}`
+				);
+				setStats(data.stats);
 			} finally {
 				setLoadingStats(false);
 			}
@@ -100,7 +99,7 @@ export default function AdminAccountPage() {
 		setActiveTab('pagamentos');
 
 		if (setup === 'success') {
-			toast({
+			toastSuccess({
 				title: 'Conta conectada! ✨',
 				description:
 					'Sua conta Stripe foi configurada. Aguarde alguns instantes enquanto sincronizamos os dados.',
@@ -168,40 +167,26 @@ export default function AdminAccountPage() {
 		event.preventDefault();
 
 		if (!organizer?.id && !user?.id) {
-
 			return;
 		}
 
 		setSavingProfile(true);
 		try {
-			const method = organizer?.id ? 'PATCH' : 'POST';
 			const payload = organizer?.id
 				? { organizerId: organizer.id, ...profileData }
 				: { userId: user?.id, ...profileData };
 
-			const response = await fetch('/api/organizer/profile', {
-				method,
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(payload),
-			});
-
-			if (!response.ok) {
-
-				throw new Error('Falha ao salvar perfil');
+			if (organizer?.id) {
+				await httpClient.patch('/api/organizer/profile', payload);
+			} else {
+				await httpClient.post('/api/organizer/profile', payload);
 			}
 
-			toast({
+			toastSuccess({
 				title: 'Perfil atualizado',
 				description: 'Suas informações foram salvas com sucesso.',
 			});
 			refetch();
-		} catch (error) {
-			console.error(error);
-			toast({
-				title: 'Não foi possível salvar',
-				description: 'Revise os dados e tente novamente.',
-				variant: 'destructive',
-			});
 		} finally {
 			setSavingProfile(false);
 		}
@@ -211,7 +196,6 @@ export default function AdminAccountPage() {
 		const file = event.target.files?.[0];
 
 		if (!file || !organizer?.id) {
-
 			return;
 		}
 
@@ -231,28 +215,13 @@ export default function AdminAccountPage() {
 			formData.append('file', file);
 			formData.append('organizerId', organizer.id);
 
-			const response = await fetch('/api/organizer/logo', {
-				method: 'POST',
-				body: formData,
-			});
+			await httpClient.post('/api/organizer/logo', formData);
 
-			if (!response.ok) {
-
-				throw new Error('Falha ao enviar logo');
-			}
-
-			toast({
+			toastSuccess({
 				title: 'Logo atualizado',
 				description: 'Sua identidade visual já aparece nos eventos.',
 			});
 			refetch();
-		} catch (error) {
-			console.error(error);
-			toast({
-				title: 'Não conseguimos enviar',
-				description: 'Tente novamente em instantes.',
-				variant: 'destructive',
-			});
 		} finally {
 			setUploadingLogo(false);
 			if (fileInputRef.current) fileInputRef.current.value = '';
