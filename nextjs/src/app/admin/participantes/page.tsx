@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { ParticipantsTable } from './_components/ParticipantsTable';
 import { MetricsCards } from './_components/MetricsCards';
 import { SearchBar } from './_components/SearchBar';
@@ -18,9 +19,12 @@ export default function ParticipantesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [redirectMessage, setRedirectMessage] = useState<string | null>(null);
 
   // Auth token
-  const { token, isLoading: isLoadingToken, error: tokenError } = useAuthToken();
+  const { token, error: tokenError, isRedirecting: isTokenRedirecting } = useAuthToken();
+  const router = useRouter();
 
   // Filter options
   const [eventOptions, setEventOptions] = useState<Array<{ id: string; title: string }>>([]);
@@ -43,6 +47,30 @@ export default function ParticipantesPage() {
     [filters]
   );
 
+  const handleUnauthorized = useCallback(
+    (message?: string) => {
+      setRedirectMessage(message ?? 'Sessão expirada. Redirecionando para login...');
+      setData(null);
+      setEventOptions([]);
+      setTicketTypeOptions([]);
+      setError(null);
+      setIsLoading(true);
+      setIsRedirecting((prev) => {
+        if (!prev) {
+          router.push('/login?redirect=/admin/participantes');
+        }
+        return true;
+      });
+    },
+    [router]
+  );
+
+  useEffect(() => {
+    if (isTokenRedirecting && !isRedirecting) {
+      handleUnauthorized(tokenError ?? undefined);
+    }
+  }, [handleUnauthorized, isRedirecting, isTokenRedirecting, tokenError]);
+
   // Load filter options on mount
   useEffect(() => {
     if (!token) return;
@@ -55,6 +83,11 @@ export default function ParticipantesPage() {
           },
         });
 
+        if (response.status === 401) {
+          handleUnauthorized();
+          return;
+        }
+
         if (response.ok) {
           const options = await response.json();
           setEventOptions(options.events || []);
@@ -66,17 +99,17 @@ export default function ParticipantesPage() {
     }
 
     loadFilterOptions();
-  }, [token]);
+  }, [handleUnauthorized, token]);
 
   // Load participants data
   useEffect(() => {
     if (!token) {
-      if (tokenError) {
+      if (tokenError && !isTokenRedirecting && !isRedirecting) {
         setError(tokenError);
         setIsLoading(false);
       }
-      
-return;
+
+      return;
     }
 
     let cancelled = false;
@@ -84,6 +117,7 @@ return;
     async function loadData() {
       setIsLoading(true);
       setError(null);
+      let keepLoading = false;
 
       try {
         // Parse filters from key
@@ -108,6 +142,14 @@ return;
           },
         });
 
+        if (response.status === 401) {
+          if (!cancelled) {
+            keepLoading = true;
+            handleUnauthorized();
+          }
+          return;
+        }
+
         if (cancelled) return;
 
         const json = await response.json();
@@ -122,7 +164,7 @@ return;
         console.error('Error loading participants:', error);
         setError('Erro ao carregar participantes');
       } finally {
-        if (!cancelled) {
+        if (!cancelled && !keepLoading) {
           setIsLoading(false);
         }
       }
@@ -133,7 +175,7 @@ return;
     return () => {
       cancelled = true;
     };
-  }, [token, tokenError, currentPage, filtersKey, refreshTrigger]);
+  }, [currentPage, filtersKey, handleUnauthorized, isRedirecting, isTokenRedirecting, token, tokenError, refreshTrigger]);
 
   const handleFilterChange = useCallback((newFilters: Filters) => {
     setFilters(newFilters);
@@ -185,6 +227,17 @@ return;
   const handleDataRefresh = useCallback(() => {
     setRefreshTrigger((prev) => prev + 1);
   }, []);
+
+  if (isRedirecting) {
+    return (
+      <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 text-center">
+        <Loader2 className="size-6 animate-spin text-gray-500 dark:text-gray-400" />
+        <p className="text-sm text-gray-600 dark:text-gray-300">
+          {redirectMessage ?? 'Redirecionando para o login...'}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
