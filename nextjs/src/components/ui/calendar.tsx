@@ -188,8 +188,14 @@ function CalendarDayButton({
   return (
     <Button
       ref={ref}
+      type="button"
       variant="ghost"
       size="icon"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        props.onClick?.(e as any);
+      }}
       data-day={day.date.toLocaleDateString()}
       data-selected-single={
         modifiers.selected &&

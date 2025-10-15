@@ -110,7 +110,7 @@ return;
 
 		const participantsCount = Array.isArray(event.registrations) ? event.registrations.length : 0;
 		const tickets = (event.tickets || []) as EventTicket[];
-		const totalSold = tickets.reduce((sum, t) => sum + (t.quantity_sold || 0), 0);
+	const totalSold = tickets.reduce((sum, t) => sum + (t.quantity_sold ?? 0), 0);
 
 		// Verificar se há ingressos vendidos ou participantes
 		if (totalSold > 0 || participantsCount > 0) {
@@ -199,9 +199,9 @@ return;
 		total: tickets.length,
 		active: tickets.filter(t => t.status === 'active').length,
 		soldOut: tickets.filter(t => t.status === 'sold_out').length,
-		totalQuantity: tickets.reduce((sum, t) => sum + (t.quantity || 0), 0),
-		totalSold: tickets.reduce((sum, t) => sum + (t.quantity_sold || 0), 0),
-		totalRevenue: tickets.reduce((sum, t) => sum + ((t.quantity_sold || 0) * parseFloat(String(t.price || '0'))), 0),
+		 totalQuantity: tickets.reduce((sum, t) => sum + (t.quantity ?? 0), 0),
+		 totalSold: tickets.reduce((sum, t) => sum + (t.quantity_sold ?? 0), 0),
+		 totalRevenue: tickets.reduce((sum, t) => sum + ((t.quantity_sold ?? 0) * parseFloat(String(t.price ?? '0'))), 0),
 	};
 
 	const getTicketStatusBadge = (status?: string) => {
@@ -527,8 +527,9 @@ return;
 						</div>
 					) : (
 						tickets.map((ticket) => {
-							const available = (ticket.quantity || 0) - (ticket.quantity_sold || 0);
-							const percentageSold = ticket.quantity ? ((ticket.quantity_sold || 0) / ticket.quantity) * 100 : 0;
+					const available = Math.max((ticket.quantity ?? 0) - (ticket.quantity_sold ?? 0), 0);
+					const totalQuantity = ticket.quantity ?? 0;
+					const percentageSold = totalQuantity > 0 ? ((ticket.quantity_sold ?? 0) / totalQuantity) * 100 : 0;
 							const isAlmostSoldOut = percentageSold >= 80 && percentageSold < 100;
 
 							return (
@@ -560,7 +561,7 @@ return;
 													<p className="text-lg font-bold text-gray-900 dark:text-white">
 														{parseFloat(String(ticket.price || '0')) === 0 ? 'Gratuito' : `R$ ${parseFloat(String(ticket.price || '0')).toFixed(2)}`}
 													</p>
-													{ticket.service_fee_type === 'passed_to_buyer' && parseFloat(String(ticket.price || '0')) > 0 && (
+										{(ticket.service_fee_type ?? 'passed_to_buyer') === 'passed_to_buyer' && parseFloat(String(ticket.price || '0')) > 0 && (
 														<p className="text-xs text-gray-500 dark:text-gray-400">
 															+ taxa de serviço
 														</p>
@@ -573,14 +574,14 @@ return;
 														{available}
 													</p>
 													<p className="text-xs text-gray-500 dark:text-gray-400">
-														de {ticket.quantity}
+									de {ticket.quantity ?? 0}
 													</p>
 												</div>
 
 												<div>
 													<p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Vendidos</p>
 													<p className="text-lg font-bold text-gray-900 dark:text-white">
-														{ticket.quantity_sold || 0}
+									{ticket.quantity_sold ?? 0}
 													</p>
 													<p className="text-xs text-gray-500 dark:text-gray-400">
 														{percentageSold.toFixed(0)}% vendido

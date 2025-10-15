@@ -1,19 +1,24 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-`src/app` hosts route groups, API handlers, and layout. Use `src/components` for UI building blocks, `src/contexts` for providers, `src/hooks` for reusable state logic, and `src/lib` for Directus, Stripe, and auth utilities. Shared types live in `src/types`; global styles in `src/styles`. Static assets stay in `public`. End-to-end scenarios reside in `testsprite_tests` alongside JSON test plans.
+- `directus/` hosts the Docker stack and configuration (`.env`, compose files); `extensions/` and `uploads/` mount directly into the Directus container. Refresh `directus/template` after every schema migration to keep CLI seeds current.
+- `nextjs/` is the App Router frontend. Marketing lives under `src/app/(public)`, auth flows under `src/app/(auth)`, and dashboards inside `src/app/admin`. Shared UI sits in `src/components`; API helpers centralize in `src/lib/directus`; reusable state goes in `src/hooks`; contexts and types live in `src/contexts` and `src/types`.
+- Acceptance scenarios reside in `testsprite_tests/` (Python + JSON). Update or add cases whenever features change.
 
 ## Build, Test, and Development Commands
-Install dependencies with `pnpm install` (match the lockfile; avoid mixing package managers). `pnpm dev` runs the Turbopack dev server; add `--openssl-legacy-provider` if targeting older OpenSSL runtimes. `pnpm build` and `pnpm start` produce and serve the optimized bundle. `pnpm lint`, `pnpm lint:fix`, and `pnpm format` enforce ESLint, Next, and Prettier rules. Regenerate Directus contracts with `pnpm generate:types` after schema edits.
+- `cd directus && cp .env.example .env && docker compose up -d` bootstraps Directus locally. Rebuild with `docker compose up -d --build directus` after schema or extension tweaks.
+- `cd nextjs && pnpm install && pnpm dev` starts the frontend (Turbopack). Use `pnpm build && pnpm start` for a production-like preview.
+- Quality gates: `pnpm lint`, `pnpm format`, and `pnpm generate:types` (Directus must be running). Run `python testsprite_tests/TC###_*.py` for targeted acceptance scenarios.
 
 ## Coding Style & Naming Conventions
-Write TypeScript-first components in `.tsx` using 2-space indentation and Prettier defaults. Components, contexts, and Zod schemas are PascalCase (`AdminDashboard.tsx`); hooks start with `use`; route folders stay lowercase (`admin`, `(public)`). Favor co-locating component-specific styles and tests. Tailwind utility classes should follow semantic grouping; rely on `tailwind-merge` to prevent duplicates. Keep imports sorted automatically via the Prettier sort-imports plugin.
+- TypeScript-first with Prettier enforcing 2-space indentation, 120-character lines, single quotes, and auto-sorted imports. Do not hand-edit formatting—run `pnpm format`.
+- Components and contexts use PascalCase (`AdminDashboard.tsx`), hooks start with `use`, helpers stay camelCase, and constants/env keys are UPPER_SNAKE_CASE.
+- Compose UI with Tailwind utilities and Shadcn primitives; avoid ad-hoc class names that violate ESLint Tailwind rules.
 
 ## Testing Guidelines
-Browser flows live under `testsprite_tests` as async Playwright scripts (`TC010_Stripe_Checkout_Payment_Failure_and_Cancel_Handling.py`). Execute targeted scenarios with `python testsprite_tests/TC010...py` inside an environment that has Playwright and browsers installed. Mirror the `TC###_Description.py` naming scheme when adding coverage. While unit tests are pending, smoke-test key routes locally and run `pnpm lint` before every PR.
+- Acceptance coverage centers on Playwright-driven scripts under `testsprite_tests/`. Mirror the `TC###_Description.py` pattern and keep JSON metadata aligned.
+- Smoke-test signup, checkout, and dashboard flows against seeded Directus data before shipping. Note gaps if automated coverage is missing.
 
 ## Commit & Pull Request Guidelines
-Commits should be focused and concise; current history favors short Portuguese summaries (`Ajustes de relacionamentos e telas`). Continue that tone or supply an equivalent imperative English line, keeping scope limited per commit. Pull requests must describe the change, highlight Directus or Stripe impacts, list new environment variables, and attach screenshots or terminal output for UI or schema updates. Update `README.md` or relevant docs whenever onboarding or configuration steps shift.
-
-## Configuration & Secrets
-Store local credentials in `.env.local`; required keys include Directus URLs/tokens, Stripe secrets, and any feature flags referenced in `src/lib`. Never commit `.env*` files. When rotating secrets, validate impacted `src/app/api` handlers and regenerate Directus types if the schema changed.
+- Follow the concise Portuguese sentence-case convention observed in history (e.g., `Ajusta fluxo de checkout`). Scope each commit to a single concern.
+- PRs must list executed commands, highlight schema/env impacts, link updated docs (e.g., `DIRECTUS-SETUP.md`), and attach screenshots for UI changes. Call out Directus permission updates so reviewers can reseed.

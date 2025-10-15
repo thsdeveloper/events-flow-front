@@ -1,13 +1,15 @@
 /**
  * Funções utilitárias para cálculo de taxas de ingressos
  *
- * Modelo de Negócio - Cenário 2 (Comprador Paga):
+ * Exemplo - Cenário "Comprador Paga" (configuração padrão: 1.99%, 4.35%, R$ 0.39):
  * - Ingresso: R$ 100,00
- * - Taxa de Conveniência: R$ 9,38 (cobrada do comprador)
- * - Total pago pelo comprador: R$ 109,38
- * - Taxa Stripe: R$ 4,76 (4.35% + R$ 0.50 sobre R$ 109,38)
- * - Taxa Plataforma: R$ 5,00 (5% sobre R$ 100,00)
- * - Organizador recebe: R$ 99,62
+ * - Taxa de Conveniência: R$ 7,04 (cobrada do comprador)
+ * - Total pago pelo comprador: R$ 107,04
+ * - Taxa Stripe: R$ 5,05 (4.35% de R$ 107,04 + R$ 0.39)
+ * - Taxa Plataforma: R$ 1,99 (1.99% de R$ 100,00)
+ * - Organizador recebe: R$ 100,00
+ *
+ * Nota: As taxas são configuráveis na collection 'event_configurations' do Directus
  */
 
 export interface FeeConfig {

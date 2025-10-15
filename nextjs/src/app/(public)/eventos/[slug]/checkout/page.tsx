@@ -32,8 +32,9 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
   const activeTickets = (event.tickets || [])
     .filter((ticket): ticket is EventTicket => typeof ticket !== 'string')
     .filter((ticket) => {
-      return ticket.status === 'active' &&
-             (ticket.quantity - (ticket.quantity_sold || 0)) > 0;
+      const totalQuantity = ticket.quantity ?? 0;
+      const sold = ticket.quantity_sold ?? 0;
+      return ticket.status === 'active' && (totalQuantity - sold) > 0;
     });
 
   if (activeTickets.length === 0) {

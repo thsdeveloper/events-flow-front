@@ -185,7 +185,7 @@ export default function TicketManagementModal({
 													</span>
 													<span>•</span>
 													<span>
-														{ticket.quantity_sold || 0} / {ticket.quantity} vendidos
+														{ticket.quantity_sold ?? 0} / {ticket.quantity ?? 0} vendidos
 													</span>
 													<span>•</span>
 													<span className="capitalize">

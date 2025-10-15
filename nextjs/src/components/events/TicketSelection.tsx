@@ -21,8 +21,17 @@ interface TicketSelectionProps {
 }
 
 // Helper function to convert price strings to numbers
-const toNumber = (value: number | string): number => {
-  return typeof value === 'string' ? parseFloat(value) : value;
+const toNumber = (value: number | string | null | undefined): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return 0;
 };
 
 export default function TicketSelection({
@@ -42,7 +51,9 @@ export default function TicketSelection({
       if (ticket.status !== 'active') return false;
 
       // Verificar se há estoque
-      const available = ticket.quantity - (ticket.quantity_sold || 0 || 0);
+      const totalQuantity = ticket.quantity ?? 0;
+      const sold = ticket.quantity_sold ?? 0;
+      const available = Math.max(totalQuantity - sold, 0);
       if (available <= 0) return false;
 
       // Verificar período de vendas
@@ -72,7 +83,8 @@ export default function TicketSelection({
       subtotal += ticketSubtotal;
 
       // Se o comprador paga a taxa, calcular a diferença
-      if (ticket.service_fee_type === 'passed_to_buyer') {
+      const serviceFeeType = ticket.service_fee_type ?? 'passed_to_buyer';
+      if (serviceFeeType === 'passed_to_buyer') {
         const buyerPrice = toNumber(ticket.buyer_price || ticket.price);
         const feePerTicket = buyerPrice - ticketPrice;
         convenienceFee += feePerTicket * quantity;
@@ -94,7 +106,9 @@ export default function TicketSelection({
     const newQuantity = Math.max(0, currentQuantity + delta);
 
     // Validar limites
-    const available = ticket.quantity - (ticket.quantity_sold || 0 || 0);
+    const totalQuantity = ticket.quantity ?? 0;
+    const sold = ticket.quantity_sold ?? 0;
+    const available = Math.max(totalQuantity - sold, 0);
     const maxAllowed = Math.min(
       available,
       ticket.max_quantity_per_purchase || available
@@ -117,7 +131,9 @@ export default function TicketSelection({
     if (!ticket) return;
 
     const quantity = parseInt(value) || 0;
-    const available = ticket.quantity - (ticket.quantity_sold || 0);
+    const totalQuantity = ticket.quantity ?? 0;
+    const sold = ticket.quantity_sold ?? 0;
+    const available = Math.max(totalQuantity - sold, 0);
     const maxAllowed = Math.min(
       available,
       ticket.max_quantity_per_purchase || available
@@ -162,9 +178,12 @@ export default function TicketSelection({
           </Card>
         ) : (
           availableTickets.map((ticket) => {
-            const available = ticket.quantity - (ticket.quantity_sold || 0);
+            const totalQuantity = ticket.quantity ?? 0;
+            const sold = ticket.quantity_sold ?? 0;
+            const available = Math.max(totalQuantity - sold, 0);
             const selected = selectedTickets.get(ticket.id) || 0;
-            const isAbsorbed = ticket.service_fee_type === 'absorbed';
+            const serviceFeeType = ticket.service_fee_type ?? 'passed_to_buyer';
+            const isAbsorbed = serviceFeeType === 'absorbed';
 
             return (
               <Card key={ticket.id}>

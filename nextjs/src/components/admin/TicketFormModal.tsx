@@ -182,20 +182,20 @@ export default function TicketFormModal({
 	// Carregar dados do ticket em edição
 	useEffect(() => {
 		if (editingTicket) {
-			form.reset({
-				title: editingTicket.title || '',
-				description: editingTicket.description || '',
-				quantity: editingTicket.quantity || 100,
-				price: editingTicket.price || 0,
-				service_fee_type: (editingTicket.service_fee_type as 'absorbed' | 'passed_to_buyer') || 'passed_to_buyer',
-				sale_start_date: editingTicket.sale_start_date || '',
-				sale_end_date: editingTicket.sale_end_date || '',
-				min_quantity_per_purchase: editingTicket.min_quantity_per_purchase || 1,
-				max_quantity_per_purchase: editingTicket.max_quantity_per_purchase || 10,
-				visibility: (editingTicket.visibility as 'public' | 'invited_only' | 'manual') || 'public',
-				allow_installments: editingTicket.allow_installments || false,
-				max_installments: editingTicket.max_installments || 4,
-				min_amount_for_installments: editingTicket.min_amount_for_installments || undefined,
+		form.reset({
+			title: editingTicket.title || '',
+			description: editingTicket.description || '',
+			quantity: editingTicket.quantity ?? 100,
+			price: editingTicket.price ?? 0,
+			service_fee_type: (editingTicket.service_fee_type ?? 'passed_to_buyer') as 'absorbed' | 'passed_to_buyer',
+			sale_start_date: editingTicket.sale_start_date || '',
+			sale_end_date: editingTicket.sale_end_date || '',
+			min_quantity_per_purchase: editingTicket.min_quantity_per_purchase ?? 1,
+			max_quantity_per_purchase: editingTicket.max_quantity_per_purchase ?? 10,
+			visibility: (editingTicket.visibility ?? 'public') as 'public' | 'invited_only' | 'manual',
+			allow_installments: editingTicket.allow_installments ?? false,
+			max_installments: editingTicket.max_installments ?? 4,
+			min_amount_for_installments: editingTicket.min_amount_for_installments ?? undefined,
 			});
 		}
 	}, [editingTicket, form]);

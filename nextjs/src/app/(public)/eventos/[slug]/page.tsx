@@ -92,10 +92,10 @@ return date.toLocaleTimeString('pt-BR', {
 
 	// Calculate ticket availability
 	const getTicketAvailability = (ticket: any) => {
-		const sold = ticket.quantity_sold || 0;
-		const total = ticket.quantity;
-		const available = total - sold;
-		const percentage = (sold / total) * 100;
+		const sold = ticket.quantity_sold ?? 0;
+		const total = ticket.quantity ?? 0;
+		const available = Math.max(total - sold, 0);
+		const percentage = total > 0 ? (sold / total) * 100 : 0;
 
 		return {
 			sold,
@@ -267,13 +267,13 @@ return date.toLocaleTimeString('pt-BR', {
 															)}
 														</div>
 														<div className="text-right ml-4">
-															{ticket.service_fee_type === 'passed_to_buyer' ? (
+										{(ticket.service_fee_type ?? 'passed_to_buyer') === 'passed_to_buyer' ? (
 																<div>
 																	<div className="text-sm text-gray-500 line-through">
-																		R$ {Number(ticket.price).toFixed(2)}
+											R$ {Number(ticket.price ?? 0).toFixed(2)}
 																	</div>
 																	<div className="text-2xl font-bold text-purple-600">
-																		R$ {Number(ticket.buyer_price || ticket.price).toFixed(2)}
+											R$ {Number(ticket.buyer_price ?? ticket.price ?? 0).toFixed(2)}
 																	</div>
 																	<div className="text-xs text-gray-500 mt-1">
 																		(inclui taxa de conveniência)
@@ -282,7 +282,7 @@ return date.toLocaleTimeString('pt-BR', {
 															) : (
 																<div>
 																	<p className="text-2xl font-bold text-purple-600">
-																		R$ {Number(ticket.buyer_price || ticket.price).toFixed(2)}
+											R$ {Number(ticket.buyer_price ?? ticket.price ?? 0).toFixed(2)}
 																	</p>
 																</div>
 															)}

@@ -222,7 +222,9 @@ export async function POST(request: NextRequest) {
       }
 
       // Validar estoque disponível
-      const available = ticket.quantity - (ticket.quantity_sold || 0);
+      const totalQuantity = ticket.quantity ?? 0;
+      const soldQuantity = ticket.quantity_sold ?? 0;
+      const available = totalQuantity - soldQuantity;
       if (selectedTicket.quantity > available) {
         return NextResponse.json(
           {
@@ -246,10 +248,11 @@ export async function POST(request: NextRequest) {
       }
 
       // Calcular valores usando a nova função
-      const ticketPrice = Number(ticket.price);
+      const ticketPrice = Number(ticket.price ?? 0);
+      const serviceFeeType = (ticket.service_fee_type ?? 'passed_to_buyer') as 'passed_to_buyer' | 'absorbed';
       const fees = calculateFees(
         ticketPrice,
-        ticket.service_fee_type as 'passed_to_buyer' | 'absorbed',
+        serviceFeeType,
         feeConfig
       );
 
