@@ -212,6 +212,7 @@ return;
 			toast({
 				title: 'Sucesso',
 				description: 'Evento atualizado com sucesso!',
+				variant: 'success',
 			});
 
 			router.push(`/admin/eventos/${id}`);

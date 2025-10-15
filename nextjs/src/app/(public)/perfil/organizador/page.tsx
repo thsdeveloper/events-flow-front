@@ -58,6 +58,7 @@ export default function PerfilOrganizadorPage() {
 			toast({
 				title: 'Conta conectada! ✨',
 				description: 'Sua conta Stripe foi configurada com sucesso.',
+				variant: 'success',
 			});
 			void refresh();
 			void refetchOrganizer();

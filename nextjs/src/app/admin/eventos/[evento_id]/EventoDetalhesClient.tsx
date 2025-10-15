@@ -92,6 +92,7 @@ return;
 			toast({
 				title: 'Sucesso',
 				description: 'Ingresso excluído com sucesso!',
+				variant: 'success',
 			});
 
 			reloadEventData();
@@ -137,6 +138,7 @@ return;
 			toast({
 				title: 'Sucesso',
 				description: 'Evento excluído com sucesso!',
+				variant: 'success',
 			});
 
 			router.push('/admin/eventos');
