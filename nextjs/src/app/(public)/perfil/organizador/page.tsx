@@ -109,12 +109,10 @@ export default function PerfilOrganizadorPage() {
 					<div className="">
 						<StatusTimeline
 							onEdit={handleEditRequest}
-							isApproved={false}
 							organizerId={organizer?.id}
 							stripeAccountId={organizer?.stripe_account_id || null}
 							stripeOnboardingComplete={Boolean(organizer?.stripe_onboarding_complete)}
 							stripeChargesEnabled={Boolean(organizer?.stripe_charges_enabled)}
-							stripePayoutsEnabled={Boolean(organizer?.stripe_payouts_enabled)}
 						/>
 
 						{/* FAQ for pending users */}
