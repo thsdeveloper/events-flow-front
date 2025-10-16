@@ -13,13 +13,14 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { EventWithStats, eventsColumns } from './EventsColumns';
+import { EventWithStats, getEventsColumns } from './EventsColumns';
 
 interface EventsTableProps {
 	data: EventWithStats[];
+	onEventDeleted?: () => void;
 }
 
-export function EventsTable({ data }: EventsTableProps) {
+export function EventsTable({ data, onEventDeleted }: EventsTableProps) {
 	const toolbar = (table: Table<EventWithStats>) => {
 		const isFiltered = table.getState().columnFilters.length > 0;
 		const statusFilter = table.getColumn('status');
@@ -209,5 +210,7 @@ export function EventsTable({ data }: EventsTableProps) {
 		);
 	};
 
-	return <DataTable columns={eventsColumns} data={data} toolbar={toolbar} />;
+	const columns = React.useMemo(() => getEventsColumns(onEventDeleted), [onEventDeleted]);
+
+	return <DataTable columns={columns} data={data} toolbar={toolbar} />;
 }

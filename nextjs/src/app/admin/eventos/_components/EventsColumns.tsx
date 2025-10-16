@@ -1,7 +1,7 @@
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, Eye, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { ArrowUpDown, Eye, MoreHorizontal, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { Event } from '@/types/directus-schema';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,7 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { DeleteEventDialog } from './DeleteEventDialog';
 
 export type EventWithStats = {
 	event: Event;
@@ -82,7 +83,7 @@ const getStatusBadge = (status?: string) => {
 	);
 };
 
-export const eventsColumns: ColumnDef<EventWithStats>[] = [
+export const getEventsColumns = (onEventDeleted?: () => void): ColumnDef<EventWithStats>[] => [
 	{
 		id: 'title',
 		accessorFn: (row) => row.event.title,
@@ -240,6 +241,7 @@ return (
 		id: 'actions',
 		cell: ({ row }) => {
 			const event = row.original.event;
+			const participantsCount = row.original.participantsCount;
 
 			return (
 				<DropdownMenu>
@@ -265,10 +267,12 @@ return (
 							</Link>
 						</DropdownMenuItem>
 						<DropdownMenuSeparator />
-						<DropdownMenuItem className="text-destructive focus:text-destructive">
-							<Trash2 className="mr-2 size-4" />
-							Excluir
-						</DropdownMenuItem>
+						<DeleteEventDialog
+							eventId={event.id}
+							eventTitle={event.title || 'Evento sem título'}
+							participantsCount={participantsCount}
+							onSuccess={onEventDeleted}
+						/>
 					</DropdownMenuContent>
 				</DropdownMenu>
 			);

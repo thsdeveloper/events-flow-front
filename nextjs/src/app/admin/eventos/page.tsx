@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Plus, Calendar, Users, Clock, LayoutGrid, Table2, MapPin, ArrowRight } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { readItems } from '@directus/sdk';
 import { useServerAuth } from '@/hooks/useServerAuth';
 import { useDirectusClient } from '@/hooks/useDirectusClient';
@@ -21,64 +21,64 @@ export default function EventosPage() {
 	const [events, setEvents] = useState<Event[]>([]);
 	const [loading, setLoading] = useState(true);
 
+	const fetchEvents = useCallback(async () => {
+		if (!client) {
+			setLoading(false);
+
+			return;
+		}
+
+		try {
+			const data = await client.request(
+				readItems('events', {
+					fields: [
+						'id',
+						'title',
+						'slug',
+						'description',
+						'short_description',
+						'cover_image',
+						'start_date',
+						'end_date',
+						'location_name',
+						'location_address',
+						'online_url',
+						'event_type',
+						'max_attendees',
+						'registration_start',
+						'registration_end',
+						'is_free',
+						'featured',
+						'tags',
+						'status',
+						'sort',
+						'user_created',
+						'date_created',
+						'user_updated',
+						'date_updated',
+						{ category_id: ['*'] },
+						{ cover_image: ['*'] },
+						{ organizer_id: ['*'] },
+						{ registrations: ['*'] },
+					],
+					sort: ['-date_created'],
+				})
+			);
+			setEvents((data as Event[]) || []);
+		} catch (error) {
+			console.error('Error fetching events:', error);
+		} finally {
+			setLoading(false);
+		}
+	}, [client]);
+
 	useEffect(() => {
-		const fetchEvents = async () => {
-			if (!client) {
-				setLoading(false);
-
-return;
-			}
-
-			try {
-				const data = await client.request(
-					readItems('events', {
-						fields: [
-							'id',
-							'title',
-							'slug',
-							'description',
-							'short_description',
-							'cover_image',
-							'start_date',
-							'end_date',
-							'location_name',
-							'location_address',
-							'online_url',
-							'event_type',
-							'max_attendees',
-							'registration_start',
-							'registration_end',
-							'is_free',
-							'featured',
-							'tags',
-							'status',
-							'sort',
-							'user_created',
-							'date_created',
-							'user_updated',
-							'date_updated',
-							{ category_id: ['*'] },
-							{ cover_image: ['*'] },
-							{ organizer_id: ['*'] },
-							{ registrations: ['*'] }
-						],
-						sort: ['-date_created'],
-					})
-				);
-				setEvents(data as Event[] || []);
-			} catch (error) {
-				console.error('Error fetching events:', error);
-			} finally {
-				setLoading(false);
-			}
-		};
-
 		if (user) {
 			fetchEvents();
 		} else {
 			setLoading(false);
 		}
-	}, [user, client]);
+	}, [user, fetchEvents]);
 
 	const preparedEvents = useMemo(
 		() =>
@@ -229,7 +229,7 @@ return;
 					</TabsList>
 
 					<TabsContent value="table" className="mt-0">
-						<EventsTable data={preparedEvents} />
+						<EventsTable data={preparedEvents} onEventDeleted={fetchEvents} />
 					</TabsContent>
 
 					<TabsContent value="grid" className="mt-0">
