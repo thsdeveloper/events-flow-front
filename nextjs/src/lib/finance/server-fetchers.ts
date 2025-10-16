@@ -77,7 +77,7 @@ export type PayoutSummary = {
 
 export type AppliedFilters = {
 	range: '30d' | '90d' | 'year' | 'custom';
-	status: string;
+	status: 'all' | 'succeeded' | 'pending' | 'failed' | 'refunded';
 	eventId: string;
 	search: string;
 	customFrom: string | null;

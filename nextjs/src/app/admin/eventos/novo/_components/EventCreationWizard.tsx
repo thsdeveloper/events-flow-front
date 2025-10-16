@@ -468,34 +468,9 @@ return;
 					throw new Error('Crie um perfil de organizador antes de publicar eventos.');
 				}
 
-				// Handle cover image upload
-				let coverImageId: string | null = values.cover_image || null;
-
-				// If cover_image is 'local-file', it's a temporary value that needs to be uploaded
-				// But if there's no file actually selected, treat it as null (from old localStorage)
-				if (coverImageId === 'local-file') {
-					coverImageId = null;
-				}
-
-				// If we have a reference to the image upload component, try to upload
-				if (imageUploadRef.current) {
-					try {
-						const uploadedId = await imageUploadRef.current.uploadFile();
-						if (uploadedId) {
-							coverImageId = uploadedId;
-							form.setValue('cover_image', coverImageId, { shouldDirty: false });
-						}
-					} catch (uploadError) {
-						console.error('Image upload failed:', uploadError);
-						throw new Error(
-							uploadError instanceof Error
-								? uploadError.message
-								: 'Erro ao fazer upload da imagem de capa'
-						);
-					}
-				}
-
-				// cover_image is optional - can be null
+				// Cover image was already uploaded immediately when selected
+				// Just use the value from the form (which is now a fileId or null)
+				const coverImageId: string | null = values.cover_image || null;
 
 				const eventData: Record<string, unknown> = {
 					title: values.title,

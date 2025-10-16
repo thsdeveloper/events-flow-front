@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useImperativeHandle, forwardRef, useEffect } from 'react';
-import { Upload, X, ImageIcon } from 'lucide-react';
+import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 
 interface ImageUploadProps {
@@ -11,6 +11,9 @@ interface ImageUploadProps {
 	description?: string;
 	required?: boolean;
 	folder?: string;
+	onUploadStart?: () => void;
+	onUploadSuccess?: (fileId: string) => void;
+	onUploadError?: (error: string) => void;
 }
 
 export interface ImageUploadRef {
@@ -24,6 +27,9 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
 	description,
 	required = false,
 	folder = 'events',
+	onUploadStart,
+	onUploadSuccess,
+	onUploadError,
 }, ref) => {
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [preview, setPreview] = useState<string | null>(
@@ -31,6 +37,7 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
 			? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${value}`
 			: null
 	);
+	const [isUploading, setIsUploading] = useState(false);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	// Expose upload method to parent
@@ -57,6 +64,13 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
 
 				if (!response.ok) {
 					const errorData = await response.json().catch(() => ({}));
+
+					// RFC 7807 Problem Details format
+					if (errorData.title && errorData.detail) {
+						throw new Error(errorData.detail);
+					}
+
+					// Legacy error format
 					throw new Error(errorData.error || 'Erro ao fazer upload da imagem');
 				}
 
@@ -66,12 +80,18 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
 				return data.fileId;
 			} catch (error) {
 				console.error('Error uploading image:', error);
-				throw error;
+
+				// Re-throw with user-friendly message
+				if (error instanceof Error) {
+					throw new Error(error.message);
+				}
+
+				throw new Error('Erro ao fazer upload da imagem. Tente novamente.');
 			}
 		},
 	}));
 
-	const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+	const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (!file) {
 			return;
@@ -79,29 +99,85 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
 
 		// Validate file type
 		if (!file.type.startsWith('image/')) {
-			alert('Por favor, selecione apenas arquivos de imagem');
+			const errorMsg = 'Por favor, selecione apenas arquivos de imagem';
+			alert(errorMsg);
+			if (onUploadError) {
+				onUploadError(errorMsg);
+			}
 
 			return;
 		}
 
 		// Validate file size (5MB max)
 		if (file.size > 5 * 1024 * 1024) {
-			alert('O arquivo deve ter no máximo 5MB');
+			const errorMsg = 'O arquivo deve ter no máximo 5MB';
+			alert(errorMsg);
+			if (onUploadError) {
+				onUploadError(errorMsg);
+			}
 
 			return;
 		}
 
-		// Store file for later upload
-		setSelectedFile(file);
-
-		// Create local preview
+		// Create local preview immediately
 		const reader = new FileReader();
 		reader.onloadend = () => {
 			setPreview(reader.result as string);
 		};
 		reader.readAsDataURL(file);
 
-		onChange('local-file');
+		// Upload immediately
+		setIsUploading(true);
+		if (onUploadStart) {
+			onUploadStart();
+		}
+
+		try {
+			const formData = new FormData();
+			formData.append('file', file);
+
+			const response = await fetch(`/api/upload?folder=${encodeURIComponent(folder)}`, {
+				method: 'POST',
+				body: formData,
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json().catch(() => ({}));
+
+				// RFC 7807 Problem Details format
+				const errorMsg = errorData.detail || errorData.error || 'Erro ao fazer upload da imagem';
+
+				throw new Error(errorMsg);
+			}
+
+			const data = await response.json();
+
+			// Update with uploaded file ID
+			onChange(data.fileId);
+			setSelectedFile(null); // Clear local file reference
+
+			if (onUploadSuccess) {
+				onUploadSuccess(data.fileId);
+			}
+		} catch (error) {
+			console.error('Error uploading image:', error);
+
+			const errorMsg = error instanceof Error ? error.message : 'Erro ao fazer upload da imagem. Tente novamente.';
+
+			// Clear preview on error
+			setPreview(null);
+
+			if (onUploadError) {
+				onUploadError(errorMsg);
+			} else {
+				alert(errorMsg);
+			}
+
+			// Reset onChange to null on error
+			onChange(null);
+		} finally {
+			setIsUploading(false);
+		}
 	};
 
 	useEffect(() => {
@@ -139,22 +215,43 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
 				{preview ? (
 					<div className="relative w-full h-48 rounded-lg overflow-hidden border-2 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800">
 						<Image src={preview} alt="Preview" fill className="object-cover" />
-						<button
-							type="button"
-							onClick={handleRemove}
-							className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
-						>
-							<X className="size-3" />
-						</button>
+						{isUploading && (
+							<div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+								<div className="flex flex-col items-center gap-2 text-white">
+									<Loader2 className="size-8 animate-spin" />
+									<p className="text-sm font-medium">Enviando imagem...</p>
+								</div>
+							</div>
+						)}
+						{!isUploading && (
+							<button
+								type="button"
+								onClick={handleRemove}
+								className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+							>
+								<X className="size-3" />
+							</button>
+						)}
 					</div>
 				) : (
 					<div
-						onClick={handleClick}
-						className="relative w-full h-48 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer flex flex-col items-center justify-center gap-2"
+						onClick={isUploading ? undefined : handleClick}
+						className={`relative w-full h-48 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 transition-colors flex flex-col items-center justify-center gap-2 ${
+							isUploading ? 'cursor-not-allowed opacity-50' : 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer'
+						}`}
 					>
-						<ImageIcon className="size-8 text-gray-400" />
-						<p className="text-sm text-gray-600 dark:text-gray-400">Clique para selecionar</p>
-						<p className="text-xs text-gray-500">PNG, JPG, GIF até 5MB</p>
+						{isUploading ? (
+							<>
+								<Loader2 className="size-8 text-gray-400 animate-spin" />
+								<p className="text-sm text-gray-600 dark:text-gray-400">Enviando...</p>
+							</>
+						) : (
+							<>
+								<ImageIcon className="size-8 text-gray-400" />
+								<p className="text-sm text-gray-600 dark:text-gray-400">Clique para selecionar</p>
+								<p className="text-xs text-gray-500">PNG, JPG, GIF até 5MB</p>
+							</>
+						)}
 					</div>
 				)}
 
@@ -164,6 +261,7 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
 					accept="image/*"
 					onChange={handleFileSelect}
 					className="hidden"
+					disabled={isUploading}
 				/>
 			</div>
 

@@ -6,6 +6,7 @@ import ImageUpload, { type ImageUploadRef } from '@/components/admin/ImageUpload
 import type { EventWizardFormValues } from '../types';
 import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 interface CoverImageStepProps {
 	imageUploadRef: React.RefObject<ImageUploadRef | null>;
@@ -18,6 +19,7 @@ interface CoverImageStepProps {
 export const CoverImageStep = forwardRef<HTMLDivElement, CoverImageStepProps>(
 	({ imageUploadRef, onChangeCoverImage, onGenerateCoverImage, isGeneratingImage, aiError }, ref) => {
 		const form = useFormContext<EventWizardFormValues>();
+		const { toast } = useToast();
 
 		return (
 			<div ref={ref} className="space-y-8">
@@ -44,8 +46,28 @@ export const CoverImageStep = forwardRef<HTMLDivElement, CoverImageStepProps>(
 										form.setValue('cover_image', '', { shouldValidate: true });
 									}
 								}}
+								onUploadStart={() => {
+									toast({
+										title: 'Enviando imagem...',
+										description: 'Aguarde enquanto fazemos o upload da sua imagem.',
+									});
+								}}
+								onUploadSuccess={(fileId) => {
+									toast({
+										title: 'Imagem enviada com sucesso!',
+										description: 'A imagem de capa foi salva e já está disponível.',
+										variant: 'success',
+									});
+								}}
+								onUploadError={(error) => {
+									toast({
+										title: 'Erro ao enviar imagem',
+										description: error,
+										variant: 'destructive',
+									});
+								}}
 								label="Imagem de capa (opcional)"
-								description="Recomendado 1200x630px. Aceita JPG, PNG ou GIF até 5MB."
+								description="Recomendado 1200x630px. Aceita JPG, PNG ou GIF até 5MB. O upload é feito automaticamente."
 							/>
 
 							{form.formState.errors.cover_image?.message && (

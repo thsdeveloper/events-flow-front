@@ -230,7 +230,7 @@ export const ticketFormSchema = z.object({
   status: z.enum(['active', 'inactive', 'sold_out'], {
     required_error: 'O status do ingresso é obrigatório',
     invalid_type_error: 'Selecione um status válido',
-  }).default('active'),
+  }).optional().default('active'),
 })
 .refine(
   (data) => {
