@@ -551,42 +551,92 @@ return;
  * Handle account.updated event (Stripe Connect)
  */
 export async function handleAccountUpdated(account: Stripe.Account): Promise<void> {
+	console.log('[Webhook] ============================================');
 	console.log('[Webhook] Account updated:', account.id);
+	console.log('[Webhook] Account details_submitted:', account.details_submitted);
+	console.log('[Webhook] Account charges_enabled:', account.charges_enabled);
+	console.log('[Webhook] Account payouts_enabled:', account.payouts_enabled);
+	console.log('[Webhook] ============================================');
 
 	try {
 		const client = getAdminClient();
 
-		// Find organizer by stripe_account_id
-		const response = await fetch(
-			`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/items/organizers?filter[stripe_account_id][_eq]=${account.id}&limit=1`,
-			{
-				headers: {
-					Authorization: `Bearer ${process.env.DIRECTUS_ADMIN_TOKEN}`,
+		// Find organizer by stripe_account_id using Directus SDK
+		console.log('[Webhook] Searching for organizer with stripe_account_id:', account.id);
+
+		const organizers = await client.request(
+			readItems('organizers', {
+				filter: {
+					stripe_account_id: { _eq: account.id },
 				},
-			},
+				limit: 1,
+				fields: ['id', 'name', 'email', 'status', 'stripe_account_id', 'stripe_onboarding_complete', 'stripe_charges_enabled', 'stripe_payouts_enabled'],
+			}),
 		);
 
-		const data = await response.json();
-		const organizers = data.data || [];
+		console.log('[Webhook] Found organizers:', organizers.length);
 
 		if (organizers.length > 0) {
 			const organizer = organizers[0];
+			console.log('[Webhook] Organizer found:', {
+				id: organizer.id,
+				name: organizer.name,
+				status: organizer.status,
+				stripe_account_id: organizer.stripe_account_id,
+				stripe_onboarding_complete: organizer.stripe_onboarding_complete,
+				stripe_charges_enabled: organizer.stripe_charges_enabled,
+				stripe_payouts_enabled: organizer.stripe_payouts_enabled,
+			});
+
+			// Check if Stripe onboarding is complete and account is ready for charges
+			const isStripeComplete = account.details_submitted && account.charges_enabled;
+			console.log('[Webhook] Is Stripe complete?', isStripeComplete);
+
+			// Prepare update data
+			const updateData: any = {
+				stripe_onboarding_complete: isStripeComplete,
+				stripe_charges_enabled: account.charges_enabled || false,
+				stripe_payouts_enabled: account.payouts_enabled || false,
+			};
+
+			// If Stripe is complete AND organizer is still pending, activate them
+			if (isStripeComplete && organizer.status === 'pending') {
+				updateData.status = 'active';
+				console.log(`[Webhook] 🎉 Activating organizer ${organizer.id} - Stripe onboarding complete!`);
+			}
+
+			console.log('[Webhook] Update data:', JSON.stringify(updateData, null, 2));
 
 			// Update organizer with Stripe account status
-			await client.request(
-				updateItem('organizers', organizer.id, {
-					stripe_onboarding_complete: account.details_submitted && account.charges_enabled,
-					stripe_charges_enabled: account.charges_enabled || false,
-					stripe_payouts_enabled: account.payouts_enabled || false,
-				}),
+			const result = await client.request(
+				updateItem('organizers', organizer.id, updateData),
 			);
 
-			console.log(`[Webhook] ✅ Organizer ${organizer.id} updated with Stripe status`);
+			console.log(`[Webhook] ✅ Organizer ${organizer.id} updated successfully`);
+			console.log('[Webhook] Updated fields:', JSON.stringify(result, null, 2));
 		} else {
-			console.warn(`[Webhook] No organizer found with stripe_account_id: ${account.id}`);
+			console.warn(`[Webhook] ⚠️  No organizer found with stripe_account_id: ${account.id}`);
+
+			// List all organizers for debugging
+			const allOrganizers = await client.request(
+				readItems('organizers', {
+					fields: ['id', 'name', 'stripe_account_id'],
+					limit: 100,
+				}),
+			);
+			console.log('[Webhook] All organizers in database:', allOrganizers.length);
+			console.log('[Webhook] Stripe account IDs:', allOrganizers.map(o => o.stripe_account_id).filter(Boolean));
 		}
 	} catch (error: any) {
-		console.error('[Webhook] Error in handleAccountUpdated:', error);
+		console.error('[Webhook] ❌ Error in handleAccountUpdated:', error);
+		console.error('[Webhook] Error message:', error.message);
+		console.error('[Webhook] Error stack:', error.stack);
+
+		// Log more details if it's a Directus error
+		if (error.errors) {
+			console.error('[Webhook] Directus errors:', JSON.stringify(error.errors, null, 2));
+		}
+
 		throw error;
 	}
 }

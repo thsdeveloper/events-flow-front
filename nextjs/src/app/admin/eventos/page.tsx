@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Plus, Calendar, Users, MapPin, ArrowRight, Clock } from 'lucide-react';
+import { Plus, Calendar, Users, Clock, LayoutGrid, Table2, MapPin, ArrowRight } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { readItems } from '@directus/sdk';
 import { useServerAuth } from '@/hooks/useServerAuth';
@@ -10,8 +10,10 @@ import { Event } from '@/types/directus-schema';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { EventsTable } from './_components/EventsTable';
 
 export default function EventosPage() {
 	const { user } = useServerAuth();
@@ -214,11 +216,30 @@ return;
 
 			{/* Events List */}
 			{preparedEvents.length > 0 ? (
-				<div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-					{preparedEvents.map(({ event, participantsCount }) => (
-						<EventCard key={event.id} event={event} participantsCount={participantsCount} />
-					))}
-				</div>
+				<Tabs defaultValue="table" className="w-full">
+					<TabsList className="mb-4 grid w-full max-w-[400px] grid-cols-2">
+						<TabsTrigger value="table" className="gap-2">
+							<Table2 className="size-4" />
+							Tabela
+						</TabsTrigger>
+						<TabsTrigger value="grid" className="gap-2">
+							<LayoutGrid className="size-4" />
+							Cards
+						</TabsTrigger>
+					</TabsList>
+
+					<TabsContent value="table" className="mt-0">
+						<EventsTable data={preparedEvents} />
+					</TabsContent>
+
+					<TabsContent value="grid" className="mt-0">
+						<div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+							{preparedEvents.map(({ event, participantsCount }) => (
+								<EventCard key={event.id} event={event} participantsCount={participantsCount} />
+							))}
+						</div>
+					</TabsContent>
+				</Tabs>
 			) : (
 				/* Empty State */
 				<Card className="grid place-items-center border-dashed py-16 text-center">
