@@ -10,7 +10,12 @@
 		"generate:types": "tsx ./src/lib/directus/generateDirectusTypes.ts",
 		"lint": "next lint",
 		"lint:fix": "eslint --fix \"src/**/*.{js,jsx,ts,tsx}\"",
-		"format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\""
+		"format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
+		"railway:deploy": "./scripts/railway-deploy.sh",
+		"railway:logs": "railway logs -f",
+		"railway:status": "railway status",
+		"railway:open": "railway open",
+		"railway:vars": "railway variables"
 	},
 	"dependencies": {
 		"@directus/sdk": "^19.1.0",

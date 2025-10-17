@@ -26,6 +26,7 @@ export function AIImageGenerationModal({ isOpen, eventTitle, categoryName }: AII
 		if (!isOpen) {
 			setCurrentStep(0);
 			setProgress(0);
+
 			return;
 		}
 
@@ -78,26 +79,26 @@ export function AIImageGenerationModal({ isOpen, eventTitle, categoryName }: AII
 					<div className="relative mb-8">
 						{/* Pulsing background circles */}
 						<div className="absolute inset-0 flex items-center justify-center">
-							<div className="w-32 h-32 rounded-full bg-primary/10 animate-ping" />
+							<div className="size-32 rounded-full bg-primary/10 animate-ping" />
 						</div>
 						<div className="absolute inset-0 flex items-center justify-center animation-delay-300">
-							<div className="w-24 h-24 rounded-full bg-primary/20 animate-ping" />
+							<div className="size-24 rounded-full bg-primary/20 animate-ping" />
 						</div>
 
 						{/* Main icon with rotation */}
-						<div className="relative z-10 flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary to-primary/60 rounded-full shadow-lg">
-							<Sparkles className="w-10 h-10 text-white animate-pulse" />
+						<div className="relative z-10 flex items-center justify-center size-20 bg-gradient-to-br from-primary to-primary/60 rounded-full shadow-lg">
+							<Sparkles className="size-10 text-white animate-pulse" />
 						</div>
 
 						{/* Orbiting icons */}
 						<div className="absolute inset-0 flex items-center justify-center animate-spin-slow">
-							<div className="absolute -top-2 w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-								<Wand2 className="w-4 h-4 text-primary" />
+							<div className="absolute -top-2 size-8 bg-primary/20 rounded-full flex items-center justify-center">
+								<Wand2 className="size-4 text-primary" />
 							</div>
 						</div>
 						<div className="absolute inset-0 flex items-center justify-center animate-spin-slow animation-delay-1000">
-							<div className="absolute -bottom-2 w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-								<Zap className="w-4 h-4 text-primary" />
+							<div className="absolute -bottom-2 size-8 bg-primary/20 rounded-full flex items-center justify-center">
+								<Zap className="size-4 text-primary" />
 							</div>
 						</div>
 					</div>
@@ -150,15 +151,15 @@ export function AIImageGenerationModal({ isOpen, eventTitle, categoryName }: AII
 										: 'text-muted-foreground/50'
 								}`}>
 									{index < currentStep ? (
-										<div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-											<svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<div className="size-5 rounded-full bg-primary flex items-center justify-center">
+											<svg className="size-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
 											</svg>
 										</div>
 									) : index === currentStep ? (
-										<Loader2 className="w-5 h-5 animate-spin" />
+										<Loader2 className="size-5 animate-spin" />
 									) : (
-										<div className="w-5 h-5 rounded-full border-2 border-current" />
+										<div className="size-5 rounded-full border-2 border-current" />
 									)}
 								</div>
 								<p className={`text-sm font-medium ${

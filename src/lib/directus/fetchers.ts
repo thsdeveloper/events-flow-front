@@ -476,22 +476,29 @@ export const fetchTotalPostCount = async (): Promise<number> => {
 };
 
 export async function fetchRedirects(): Promise<Pick<Redirect, 'url_from' | 'url_to' | 'response_code'>[]> {
-	const { directus } = useDirectus();
-	const response = await directus.request(
-		readItems('redirects', {
-			filter: {
-				_and: [
-					{
-						url_from: { _nnull: true },
-					},
-					{
-						url_to: { _nnull: true },
-					},
-				],
-			},
-			fields: ['url_from', 'url_to', 'response_code'],
-		}),
-	);
+	try {
+		const { directus } = useDirectus();
+		const response = await directus.request(
+			readItems('redirects', {
+				filter: {
+					_and: [
+						{
+							url_from: { _nnull: true },
+						},
+						{
+							url_to: { _nnull: true },
+						},
+					],
+				},
+				fields: ['url_from', 'url_to', 'response_code'],
+			}),
+		);
 
-	return response || [];
+		return response || [];
+	} catch (error) {
+		// Return empty array if redirects collection doesn't exist or user doesn't have permission
+		console.warn('Could not fetch redirects - collection may not exist or permission denied:', error);
+
+		return [];
+	}
 }

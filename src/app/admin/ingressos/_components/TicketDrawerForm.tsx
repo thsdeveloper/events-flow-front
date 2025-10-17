@@ -61,14 +61,7 @@ export function TicketDrawerForm({ open, onClose, ticket, onSaved, eventOptions 
   const { token } = useAuthToken();
 
   const form = useForm<TicketFormData>({
-    resolver: zodResolver(ticketFormSchema, {
-      // Desabilita validação automática no submit para pegarmos os valores
-      errorMap: (error, ctx) => {
-        console.log('[Zod Validation Error]', error, ctx);
-        
-return { message: ctx.defaultError };
-      },
-    }),
+    resolver: zodResolver(ticketFormSchema) as any, // Type assertion para contornar incompatibilidade de tipos com catch()
     mode: 'onBlur',
     shouldUnregister: false, // Mantém campos mesmo quando não visíveis
     defaultValues: {

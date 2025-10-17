@@ -230,7 +230,7 @@ export const ticketFormSchema = z.object({
   status: z.enum(['active', 'inactive', 'sold_out'], {
     required_error: 'O status do ingresso é obrigatório',
     invalid_type_error: 'Selecione um status válido',
-  }).optional().default('active'),
+  }).catch('active'),
 })
 .refine(
   (data) => {
@@ -289,5 +289,9 @@ return true;
   }
 );
 
-// Type inference - apenas o tipo completo é usado
-export type TicketFormData = z.infer<typeof ticketFormSchema>;
+// Type inference - apenas o tipo completo é usado com status obrigatório
+type InferredTicketFormData = z.infer<typeof ticketFormSchema>;
+
+export type TicketFormData = Omit<InferredTicketFormData, 'status'> & {
+	status: 'active' | 'inactive' | 'sold_out';
+};
