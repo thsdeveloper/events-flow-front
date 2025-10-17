@@ -43,10 +43,18 @@ export const POST = withApi(async (request: NextRequest) => {
 
 	// Validate tokens
 	if (!authResult.refresh_token) {
-		throw new AppError('No refresh token received from authentication', 500);
+		throw new AppError({
+			message: 'No refresh token received from authentication',
+			status: 500,
+			code: 'AUTH_REFRESH_FAILED',
+		});
 	}
 	if (authResult.expires === null || authResult.expires === undefined) {
-		throw new AppError('No expiration time received from authentication', 500);
+		throw new AppError({
+			message: 'No expiration time received from authentication',
+			status: 500,
+			code: 'AUTH_REFRESH_FAILED',
+		});
 	}
 
 	// Update cookies with new tokens
