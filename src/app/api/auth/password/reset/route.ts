@@ -37,5 +37,9 @@ export const POST = withApi(async (request: NextRequest) => {
 	const errorData = await response.json().catch(() => ({}));
 	const errorMessage = errorData.errors?.[0]?.message || 'Token inválido ou expirado';
 
-	throw new AppError(errorMessage, response.status);
+	throw new AppError({
+		message: errorMessage,
+		status: response.status,
+		code: 'PASSWORD_RESET_FAILED',
+	});
 });
