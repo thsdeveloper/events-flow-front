@@ -30,6 +30,7 @@ coverage/
 .eslintcache
 .stylelintcache
 .pnpm-store/
+*.tsbuildinfo
 
 # Deployment Platforms
 .netlify/
