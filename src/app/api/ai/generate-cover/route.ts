@@ -283,10 +283,10 @@ async function uploadToDirectus(
 		const errorText = await uploadResponse.text();
 		console.error('Directus upload error:', errorText);
 		throw new AppError({
-			type: 'https://api.example.com/errors/upload-failed',
-			title: 'Falha no Upload',
-			detail: 'Não foi possível enviar a imagem gerada para o Directus.',
+			message: 'Não foi possível enviar a imagem gerada para o Directus.',
 			status: uploadResponse.status,
+			code: 'UPLOAD_FAILED',
+			type: 'https://api.example.com/errors/upload-failed',
 		});
 	}
 
@@ -295,10 +295,10 @@ async function uploadToDirectus(
 
 	if (!fileId) {
 		throw new AppError({
-			type: 'https://api.example.com/errors/upload-failed',
-			title: 'Upload Incompleto',
-			detail: 'Upload concluído, mas não foi possível obter o ID do arquivo.',
+			message: 'Upload concluído, mas não foi possível obter o ID do arquivo.',
 			status: 500,
+			code: 'UPLOAD_INCOMPLETE',
+			type: 'https://api.example.com/errors/upload-failed',
 		});
 	}
 
@@ -323,20 +323,20 @@ export const POST = withApi(async (request: NextRequest) => {
 	// Validate OpenAI API key
 	if (!OPENAI_API_KEY) {
 		throw new AppError({
-			type: 'https://api.example.com/errors/service-unavailable',
-			title: 'Serviço Não Configurado',
-			detail: 'A chave de API da OpenAI não está configurada. Por favor, configure a variável de ambiente OPENAI_API_KEY.',
+			message: 'A chave de API da OpenAI não está configurada. Por favor, configure a variável de ambiente OPENAI_API_KEY.',
 			status: 503,
+			code: 'SERVICE_UNAVAILABLE',
+			type: 'https://api.example.com/errors/service-unavailable',
 		});
 	}
 
 	// Validate Directus token
 	if (!FORM_TOKEN) {
 		throw new AppError({
-			type: 'https://api.example.com/errors/service-unavailable',
-			title: 'Configuração Inválida',
-			detail: 'Token de formulário do Directus não configurado.',
+			message: 'Token de formulário do Directus não configurado.',
 			status: 500,
+			code: 'INVALID_CONFIGURATION',
+			type: 'https://api.example.com/errors/service-unavailable',
 		});
 	}
 
@@ -345,14 +345,13 @@ export const POST = withApi(async (request: NextRequest) => {
 
 	if (!body.title || body.title.trim().length === 0) {
 		throw new AppError({
-			type: 'https://api.example.com/errors/validation-failed',
-			title: 'Dados Inválidos',
-			detail: 'O título do evento é obrigatório para gerar a imagem de capa.',
+			message: 'O título do evento é obrigatório para gerar a imagem de capa.',
 			status: 400,
-			instance: request.url,
-			extensions: {
+			code: 'VALIDATION_FAILED',
+			type: 'https://api.example.com/errors/validation-failed',
+			context: {
 				field: 'title',
-				code: 'required',
+				validationCode: 'required',
 			},
 		});
 	}
@@ -392,10 +391,10 @@ export const POST = withApi(async (request: NextRequest) => {
 
 	if (!imageBase64) {
 		throw new AppError({
-			type: 'https://api.example.com/errors/generation-failed',
-			title: 'Geração Falhou',
-			detail: 'A OpenAI não retornou uma imagem válida.',
+			message: 'A OpenAI não retornou uma imagem válida.',
 			status: 500,
+			code: 'GENERATION_FAILED',
+			type: 'https://api.example.com/errors/generation-failed',
 		});
 	}
 
