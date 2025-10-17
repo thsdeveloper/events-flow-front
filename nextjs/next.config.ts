@@ -39,6 +39,8 @@ const nextConfig: NextConfig = {
 				pathname: '/assets/**',
 			},
 		],
+		loader: 'custom',
+		loaderFile: './src/lib/directus-image-loader.ts',
 	},
 	env: {
 		DIRECTUS_PUBLIC_TOKEN: process.env.DIRECTUS_PUBLIC_TOKEN,

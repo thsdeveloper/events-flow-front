@@ -22,6 +22,7 @@ import { ScheduleStep } from './steps/ScheduleStep';
 import { LocationStep } from './steps/LocationStep';
 import { TicketsStep } from './steps/TicketsStep';
 import { ReviewStep } from './steps/ReviewStep';
+import { AIImageGenerationModal } from '@/components/admin/AIImageGenerationModal';
 import type { EventWizardFormValues, EventWizardStepMeta } from './types';
 import {
 	basicInfoSchema,
@@ -338,22 +339,32 @@ export function EventCreationWizard() {
 		setIsGeneratingCover(true);
 
 		try {
-			const { title, description, category_id: categoryId } = form.getValues();
+			const { title, description, short_description, category_id: categoryId } = form.getValues();
 			if (!title) {
-				throw new Error('Informe o título do evento antes de gerar a capa.');
+				setCoverAiError('Informe o título do evento antes de gerar a capa.');
+				setIsGeneratingCover(false);
+
+				return;
 			}
 
+			// Start the API call
 			const response = await fetch('/api/ai/generate-cover', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ title, description, categoryId }),
+				body: JSON.stringify({
+					title,
+					description,
+					short_description,
+					categoryId
+				}),
 			});
 
 			if (!response.ok) {
 				let errorMessage = 'Não foi possível gerar a capa agora.';
 				try {
 					const data = await response.json();
-					errorMessage = data?.error ?? errorMessage;
+					// RFC 7807 format
+					errorMessage = data?.detail || data?.error || errorMessage;
 				} catch {
 					// ignore
 				}
@@ -368,12 +379,17 @@ export function EventCreationWizard() {
 
 			form.setValue('cover_image', data.fileId, { shouldDirty: true, shouldValidate: true });
 			toast({
-				title: 'Imagem sugerida com sucesso',
+				title: 'Imagem gerada com sucesso!',
 				description: 'Revise o resultado e ajuste se precisar.',
 				variant: 'success',
 			});
 		} catch (error) {
 			setCoverAiError(error instanceof Error ? error.message : 'Não foi possível gerar a capa agora.');
+			toast({
+				title: 'Erro ao gerar imagem',
+				description: error instanceof Error ? error.message : 'Não foi possível gerar a capa agora.',
+				variant: 'destructive',
+			});
 		} finally {
 			setIsGeneratingCover(false);
 		}
@@ -621,6 +637,12 @@ return;
 					<Confetti width={confettiSize.width} height={confettiSize.height} recycle={false} numberOfPieces={420} />
 				</div>
 			)}
+
+			<AIImageGenerationModal
+				isOpen={isGeneratingCover}
+				eventTitle={form.watch('title') || 'Seu Evento'}
+				categoryName={categories.find(c => c.id === form.watch('category_id'))?.name}
+			/>
 		</Form>
 	);
 }
