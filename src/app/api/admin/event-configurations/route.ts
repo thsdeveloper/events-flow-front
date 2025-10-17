@@ -29,7 +29,7 @@ export async function GET() {
 
     try {
       config = await client.request(
-        readSingleton('event_configurations', {
+        readSingleton('event_configurations' as any, {
           fields: [
             'id',
             'allow_free_events',
@@ -46,7 +46,7 @@ export async function GET() {
     } catch (singletonError) {
       // Se não for singleton, tentar buscar como collection
       const configs = await client.request(
-        readItems('event_configurations', {
+        readItems('event_configurations' as any, {
           limit: 1,
           fields: [
             'id',
