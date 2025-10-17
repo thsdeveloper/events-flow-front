@@ -387,7 +387,7 @@ export const POST = withApi(async (request: NextRequest) => {
 		quality: 'high', // Use 'high' for best quality event covers
 	});
 
-	const imageBase64 = imageResponse.data[0]?.b64_json;
+	const imageBase64 = imageResponse.data?.[0]?.b64_json;
 
 	if (!imageBase64) {
 		throw new AppError({
