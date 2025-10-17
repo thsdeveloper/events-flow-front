@@ -34,7 +34,7 @@ export function Toaster() {
 	return (
 		<ToastProvider duration={TOAST_DEFAULT_DURATION} swipeDirection="right">
 			{toasts.map(function ({ id, title, description, action, variant, ...props }) {
-				const icon = getIcon(variant);
+				const icon = getIcon(variant ?? undefined);
 
 				return (
 					<Toast key={id} variant={variant} {...props}>

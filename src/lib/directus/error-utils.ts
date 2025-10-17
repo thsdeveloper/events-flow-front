@@ -82,10 +82,9 @@ export function parseDirectusError(error: unknown): ParsedDirectusError {
     firstError?.status;
 
   const code =
-    (typeof extensions?.code === 'string' && extensions.code) ??
-    (typeof firstError?.code === 'string' && firstError.code) ??
-    (typeof err.code === 'string' && err.code) ??
-    undefined;
+    (typeof extensions?.code === 'string' ? extensions.code : undefined) ??
+    (typeof firstError?.code === 'string' ? firstError.code : undefined) ??
+    (typeof err.code === 'string' ? err.code : undefined);
 
   const message =
     normalizeMessage(err) ??

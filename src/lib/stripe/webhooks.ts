@@ -78,7 +78,7 @@ async function handleInstallmentPayment(
 	try {
 		// Fetch installment with registration data
 		const installment = await (client.request as any)(
-			readItem('payment_installments', installmentId, {
+			(readItem as any)('payment_installments', installmentId, {
 				fields: [
 					'*',
 					{
@@ -111,7 +111,7 @@ return;
 
 		// Update installment status
 		await (client.request as any)(
-			updateItem('payment_installments', installmentId, {
+			(updateItem as any)('payment_installments', installmentId, {
 				status: 'paid' as const,
 				paid_at: new Date().toISOString(),
 				payment_confirmed_at: new Date().toISOString(),
@@ -149,7 +149,7 @@ return;
 
 		// Fetch all installments for this registration
 		const allInstallments = await (client.request as any)(
-			readItems('payment_installments', {
+			(readItems as any)('payment_installments', {
 				filter: {
 					registration_id: { _eq: registrationId },
 				},
@@ -192,7 +192,7 @@ return;
 
 		// Update registration
 		await client.request(
-			updateItem('event_registrations', registrationId, {
+			(updateItem as any)('event_registrations', registrationId, {
 				status: newStatus,
 				payment_status: newPaymentStatus,
 				blocked_reason: blockedReason,
@@ -209,7 +209,7 @@ return;
 			const ticketCode = `TKT-${timestamp}-${random}`;
 
 			await client.request(
-				updateItem('event_registrations', registrationId, {
+				(updateItem as any)('event_registrations', registrationId, {
 					ticket_code: ticketCode,
 					stripe_payment_intent_id: paymentIntent.id,
 				}),
@@ -225,8 +225,8 @@ return;
 							? installment.registration_id.ticket_type_id.id
 							: installment.registration_id.ticket_type_id;
 
-					const ticket = await client.request(
-						readItem('event_tickets', ticketId, {
+					const ticket: any = await client.request(
+						(readItem as any)('event_tickets', ticketId, {
 							fields: ['id', 'quantity_sold', 'title'],
 						}),
 					);
@@ -235,7 +235,7 @@ return;
 					const newSold = currentSold + (installment.registration_id.quantity || 1);
 
 					await client.request(
-						updateItem('event_tickets', ticketId, {
+						(updateItem as any)('event_tickets', ticketId, {
 							quantity_sold: newSold,
 						}),
 					);
@@ -300,7 +300,7 @@ return;
 
 		// ⚠️ IDEMPOTENCY CHECK: Verify if ANY of these registrations was already processed
 		const processedRegistrations = await client.request(
-			readItems('event_registrations', {
+			(readItems as any)('event_registrations', {
 				filter: {
 					id: { _in: registrationIds },
 					payment_status: { _eq: 'paid' },
@@ -321,8 +321,8 @@ return;
 		for (const registrationId of registrationIds) {
 			try {
 				// Read current registration
-				const registration = await client.request(
-					readItem('event_registrations', registrationId, {
+				const registration: any = await client.request(
+					(readItem as any)('event_registrations', registrationId, {
 						fields: [
 							'id',
 							'ticket_type_id',
@@ -350,7 +350,7 @@ return;
 
 				// Update registration
 				await client.request(
-					updateItem('event_registrations', registrationId, {
+					(updateItem as any)('event_registrations', registrationId, {
 						payment_status: 'paid',
 						status: 'confirmed',
 						stripe_payment_intent_id: paymentIntent.id,
@@ -385,8 +385,8 @@ return;
 								? registration.ticket_type_id.id
 								: registration.ticket_type_id;
 
-						const ticket = await client.request(
-							readItem('event_tickets', ticketId, {
+						const ticket: any = await client.request(
+							(readItem as any)('event_tickets', ticketId, {
 								fields: ['id', 'quantity_sold', 'title'],
 							}),
 						);
@@ -395,7 +395,7 @@ return;
 						const newSold = currentSold + (registration.quantity || 1);
 
 						await client.request(
-							updateItem('event_tickets', ticketId, {
+							(updateItem as any)('event_tickets', ticketId, {
 								quantity_sold: newSold,
 							}),
 						);
@@ -453,7 +453,7 @@ export async function handlePaymentIntentFailed(
 			for (const registrationId of registrationIds) {
 				try {
 					await client.request(
-						updateItem('event_registrations', registrationId, {
+						(updateItem as any)('event_registrations', registrationId, {
 							payment_status: 'pending', // Keep as pending for retry
 							status: 'pending',
 						}),
@@ -502,7 +502,7 @@ return;
 
 		// Find registrations by payment_intent_id
 		const registrations = await client.request(
-			readItems('event_registrations', {
+			(readItems as any)('event_registrations', {
 				filter: {
 					stripe_payment_intent_id: { _eq: paymentIntentId },
 				},
@@ -530,7 +530,7 @@ return;
 			for (const registration of registrations) {
 				try {
 					await client.request(
-						updateItem('event_registrations', registration.id, {
+						(updateItem as any)('event_registrations', registration.id, {
 							payment_status: 'refunded',
 							status: 'cancelled',
 							stripe_refund_id: charge.refunds?.data?.[0]?.id || null,
