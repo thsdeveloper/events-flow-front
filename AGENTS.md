@@ -1,34 +1,24 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `directus/` contains the Docker stack and `.env`; `extensions/` and `uploads/` mount into the container volumes.
-- `directus/template` captures schema seeds for the CLI starter—refresh it after each Directus migration.
-- `nextjs/` hosts the App Router code in `src/app`: `(public)` serves marketing flows, `(auth)` handles user onboarding, and `admin/` powers dashboards.
-- Shared UI lives in `nextjs/src/components`, and `nextjs/src/lib/directus` centralises API clients; extend these modules first.
-- `testsprite_tests/` documents regression scenarios (Python + JSON) and serves as the acceptance contract for features.
+- `directus/` hosts the Docker stack and configuration (`.env`, compose files); `extensions/` and `uploads/` mount directly into the Directus container. Refresh `directus/template` after every schema migration to keep CLI seeds current.
+- `nextjs/` is the App Router frontend. Marketing lives under `src/app/(public)`, auth flows under `src/app/(auth)`, and dashboards inside `src/app/admin`. Shared UI sits in `src/components`; API helpers centralize in `src/lib/directus`; reusable state goes in `src/hooks`; contexts and types live in `src/contexts` and `src/types`.
+- Acceptance scenarios reside in `testsprite_tests/` (Python + JSON). Update or add cases whenever features change.
 
 ## Build, Test, and Development Commands
-- Initialise Directus and start services: `cd directus && cp .env.example .env && docker compose up -d`.
-- Rebuild Directus when schema, extensions, or env values change with `docker compose up -d --build directus`.
-- Install frontend dependencies and run local dev: `cd nextjs && pnpm install && pnpm dev`.
-- Ship-ready build: `pnpm build && pnpm start` for a production preview.
-- Quality gates: `pnpm lint`, `pnpm format`, and `pnpm generate:types` (requires Directus running).
+- `cd directus && cp .env.example .env && docker compose up -d` bootstraps Directus locally. Rebuild with `docker compose up -d --build directus` after schema or extension tweaks.
+- `cd nextjs && pnpm install && pnpm dev` starts the frontend (Turbopack). Use `pnpm build && pnpm start` for a production-like preview.
+- Quality gates: `pnpm lint`, `pnpm format`, and `pnpm generate:types` (Directus must be running). Run `python testsprite_tests/TC###_*.py` for targeted acceptance scenarios.
 
 ## Coding Style & Naming Conventions
-- Let Prettier (`pnpm format`) enforce 120-character width, single quotes, and sorted imports; do not hand-edit formatting.
-- Use TypeScript throughout; React components in `PascalCase`, helpers in `camelCase`, constants and env keys in `UPPER_SNAKE_CASE`.
-- Keep App Router semantics—group routes with parentheses, expose API handlers via `route.ts`, and colocate loader utilities for each segment.
-- Compose UI with Tailwind utilities and Shadcn primitives; avoid bespoke class names that break the ESLint Tailwind plugin.
+- TypeScript-first with Prettier enforcing 2-space indentation, 120-character lines, single quotes, and auto-sorted imports. Do not hand-edit formatting—run `pnpm format`.
+- Components and contexts use PascalCase (`AdminDashboard.tsx`), hooks start with `use`, helpers stay camelCase, and constants/env keys are UPPER_SNAKE_CASE.
+- Compose UI with Tailwind utilities and Shadcn primitives; avoid ad-hoc class names that violate ESLint Tailwind rules.
 
 ## Testing Guidelines
-- Automated runs are pending; treat the artefacts under `testsprite_tests/` as the living test plan and update them with every feature or bugfix.
-- For every PR, run `pnpm lint`, regenerate Directus types, and exercise core flows (signup, checkout, dashboard) against the seeded Directus data.
+- Acceptance coverage centers on Playwright-driven scripts under `testsprite_tests/`. Mirror the `TC###_Description.py` pattern and keep JSON metadata aligned.
+- Smoke-test signup, checkout, and dashboard flows against seeded Directus data before shipping. Note gaps if automated coverage is missing.
 
 ## Commit & Pull Request Guidelines
-- Follow the existing Portuguese, sentence-case commit style (e.g., `Ajusta fluxo de checkout`) and focus on a single concern per commit.
-- In PR descriptions, list the executed commands, affected env vars, and link any updated operational docs such as `DIRECTUS-SETUP.md`.
-- Attach screenshots for UI work and call out schema or permission changes so reviewers can reseed their instances.
-
-## Environment & Security
-- Keep secrets in local env files (`nextjs/.env.local`, `directus/.env`) and exclude them from commits.
-- After rotating credentials, restart Directus (`docker compose restart directus`) then rerun `pnpm generate:types`.
+- Follow the concise Portuguese sentence-case convention observed in history (e.g., `Ajusta fluxo de checkout`). Scope each commit to a single concern.
+- PRs must list executed commands, highlight schema/env impacts, link updated docs (e.g., `DIRECTUS-SETUP.md`), and attach screenshots for UI changes. Call out Directus permission updates so reviewers can reseed.
