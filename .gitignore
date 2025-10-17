@@ -1,7 +1,6 @@
-# Directus Specific
-directus/data/
-directus/uploads/
-directus/extensions/.registry
+# Directus Specific (moved to separate repo)
+events-flow-back/
+directus-backup/
 
 # Dependencies
 node_modules/
