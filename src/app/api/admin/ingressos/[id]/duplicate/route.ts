@@ -51,7 +51,7 @@ export async function POST(
       ...originalTicket,
       title: `${originalTicket.title} - Cópia`,
       quantity_sold: 0,
-      status: 'inactive', // Start as inactive
+      status: 'inactive' as const, // Start as inactive
       sort: 0,
     };
 
