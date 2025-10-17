@@ -69,7 +69,7 @@ export const GET = withApi(async (request: NextRequest) => {
         filter: Object.keys(filter).length > 0 ? filter : undefined,
         limit: query.limit,
         offset: (query.page - 1) * query.limit,
-        sort: ['-date_created'],
+        sort: ['-id'],
       })
     );
 

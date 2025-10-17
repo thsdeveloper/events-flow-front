@@ -11,11 +11,11 @@ export const POST = withApi(async (request) => {
 
 	if (!authToken) {
 		throw new AppError({
+			message: 'Você precisa estar autenticado para fazer upload de arquivos. Faça login e tente novamente.',
 			status: 401,
-			title: 'Não autenticado',
-			detail: 'Você precisa estar autenticado para fazer upload de arquivos. Faça login e tente novamente.',
+			code: 'AUTHENTICATION_REQUIRED',
 			type: 'authentication-required',
-			instance: request.headers.get('x-request-id') || undefined,
+			requestId: request.headers.get('x-request-id') ?? undefined,
 		});
 	}
 
@@ -38,20 +38,20 @@ export const POST = withApi(async (request) => {
 			folderId = foldersData.data[0].id;
 		} else {
 			throw new AppError({
+				message: `A pasta "${folderName}" não existe no Directus. Crie a pasta antes de fazer upload.`,
 				status: 404,
-				title: 'Pasta não encontrada',
-				detail: `A pasta "${folderName}" não existe no Directus. Crie a pasta antes de fazer upload.`,
+				code: 'FOLDER_NOT_FOUND',
 				type: 'folder-not-found',
-				instance: request.headers.get('x-request-id') || undefined,
+				requestId: request.headers.get('x-request-id') ?? undefined,
 			});
 		}
 	} else {
 		throw new AppError({
+			message: 'Não foi possível verificar se a pasta existe no Directus.',
 			status: 500,
-			title: 'Erro ao buscar pasta',
-			detail: 'Não foi possível verificar se a pasta existe no Directus.',
+			code: 'FOLDER_CHECK_FAILED',
 			type: 'folder-check-failed',
-			instance: request.headers.get('x-request-id') || undefined,
+			requestId: request.headers.get('x-request-id') ?? undefined,
 		});
 	}
 
@@ -60,22 +60,22 @@ export const POST = withApi(async (request) => {
 
 	if (!file || !(file instanceof File)) {
 		throw new AppError({
+			message: 'Nenhum arquivo foi enviado na requisição.',
 			status: 400,
-			title: 'Arquivo não enviado',
-			detail: 'Nenhum arquivo foi enviado na requisição.',
+			code: 'FILE_NOT_PROVIDED',
 			type: 'validation-error',
-			instance: request.headers.get('x-request-id') || undefined,
+			requestId: request.headers.get('x-request-id') ?? undefined,
 		});
 	}
 
 	// Validate file type
 	if (!file.type.startsWith('image/')) {
 		throw new AppError({
+			message: 'Apenas arquivos de imagem são permitidos (JPG, PNG, GIF, WebP).',
 			status: 400,
-			title: 'Tipo de arquivo inválido',
-			detail: 'Apenas arquivos de imagem são permitidos (JPG, PNG, GIF, WebP).',
+			code: 'INVALID_FILE_TYPE',
 			type: 'validation-error',
-			instance: request.headers.get('x-request-id') || undefined,
+			requestId: request.headers.get('x-request-id') ?? undefined,
 		});
 	}
 
@@ -83,18 +83,20 @@ export const POST = withApi(async (request) => {
 	const maxSize = 5 * 1024 * 1024; // 5MB
 	if (file.size > maxSize) {
 		throw new AppError({
+			message: `O arquivo deve ter no máximo 5MB. Tamanho atual: ${(file.size / 1024 / 1024).toFixed(2)}MB.`,
 			status: 400,
-			title: 'Arquivo muito grande',
-			detail: `O arquivo deve ter no máximo 5MB. Tamanho atual: ${(file.size / 1024 / 1024).toFixed(2)}MB.`,
+			code: 'FILE_TOO_LARGE',
 			type: 'validation-error',
-			instance: request.headers.get('x-request-id') || undefined,
+			requestId: request.headers.get('x-request-id') ?? undefined,
 		});
 	}
 
 	// Upload the file to Directus
 	const uploadFormData = new FormData();
 	uploadFormData.append('file', file);
-	uploadFormData.append('folder', folderId);
+	if (folderId) {
+		uploadFormData.append('folder', folderId);
+	}
 
 	const uploadResponse = await fetch(`${DIRECTUS_URL}/files`, {
 		method: 'POST',
@@ -109,11 +111,11 @@ export const POST = withApi(async (request) => {
 		console.error('Directus upload error:', error);
 
 		throw new AppError({
+			message: error?.errors?.[0]?.message || 'Não foi possível fazer upload da imagem no Directus. Tente novamente.',
 			status: uploadResponse.status,
-			title: 'Erro ao fazer upload',
-			detail: error?.errors?.[0]?.message || 'Não foi possível fazer upload da imagem no Directus. Tente novamente.',
+			code: 'UPLOAD_FAILED',
 			type: 'upload-failed',
-			instance: request.headers.get('x-request-id') || undefined,
+			requestId: request.headers.get('x-request-id') ?? undefined,
 		});
 	}
 

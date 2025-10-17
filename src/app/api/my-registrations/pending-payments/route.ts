@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
 		const directus = getAuthenticatedClient(authToken);
 
 		// Fetch current user's registrations with installment payments
-		const registrations = await (directus.request as any)(
-			readItems('event_registrations', {
+		const registrations = await directus.request(
+			readItems('event_registrations' as any, {
 				filter: {
 					is_installment_payment: { _eq: true },
 					_or: [
@@ -69,8 +69,8 @@ export async function GET(request: NextRequest) {
 		// For each registration, fetch installments
 		const registrationsWithInstallments = await Promise.all(
 			registrations.map(async (registration: any) => {
-				const installments = await (directus.request as any)(
-					readItems('payment_installments', {
+				const installments = await directus.request(
+					readItems('payment_installments' as any, {
 						filter: {
 							registration_id: { _eq: registration.id },
 						},

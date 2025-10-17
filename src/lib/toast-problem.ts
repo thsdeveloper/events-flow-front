@@ -6,19 +6,12 @@
  */
 
 import type { HttpError } from './http';
+import type { useToast } from '@/hooks/use-toast';
 
 /**
- * Tipo do toast do shadcn/ui
+ * Tipo do toast do shadcn/ui (extraído do retorno de useToast)
  */
-export interface Toast {
-  (props: {
-    title?: string;
-    description?: string;
-    variant?: 'default' | 'destructive';
-    action?: unknown;
-    duration?: number;
-  }): void;
-}
+export type Toast = ReturnType<typeof useToast>['toast'];
 
 /**
  * Opções para apresentação do toast

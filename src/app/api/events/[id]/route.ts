@@ -9,8 +9,9 @@ import { getAuthenticatedClient } from '@/lib/directus/directus';
  * Deleta um evento no Directus
  * Valida se o evento possui participantes antes de excluir
  */
-export const DELETE = withApi(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
-	const { id } = await params;
+export const DELETE = withApi(async (request: NextRequest, context: { params: Promise<Record<string, string | string[]>> }) => {
+	const resolvedParams = await context.params;
+	const id = resolvedParams.id as string;
 	const requestId = request.headers.get('x-request-id');
 
 	try {
@@ -68,6 +69,6 @@ export const DELETE = withApi(async (request: NextRequest, { params }: { params:
 			{ status: 200 }
 		);
 	} catch (error) {
-		throw fromDirectusError(error, requestId);
+		throw fromDirectusError(error, requestId ?? undefined);
 	}
 });

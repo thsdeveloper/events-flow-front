@@ -122,7 +122,7 @@ export default function TicketFormModal({
 
 	// React Hook Form
 	const form = useForm<TicketFormValues>({
-		resolver: zodResolver(ticketFormSchema),
+		resolver: zodResolver(ticketFormSchema) as any,
 		defaultValues: {
 			title: '',
 			description: '',

@@ -31,8 +31,9 @@ const updateUserSchema = z.object({
  *
  * Busca usuário por ID
  */
-export const GET = withApi(async (request: NextRequest, { params }) => {
-  const { id } = params;
+export const GET = withApi(async (request: NextRequest, context: { params: Promise<Record<string, string | string[]>> }) => {
+  const resolvedParams = await context.params;
+  const id = resolvedParams.id as string;
 
   try {
     const client = getAuthClient();
@@ -60,8 +61,9 @@ export const GET = withApi(async (request: NextRequest, { params }) => {
  *
  * Atualiza usuário (validação com Zod)
  */
-export const PUT = withApi(async (request: NextRequest, { params }) => {
-  const { id } = params;
+export const PUT = withApi(async (request: NextRequest, context: { params: Promise<Record<string, string | string[]>> }) => {
+  const resolvedParams = await context.params;
+  const id = resolvedParams.id as string;
 
   // Valida body com Zod (lança AppError automaticamente se inválido)
   const body = await validateBody(request, updateUserSchema);
@@ -85,8 +87,9 @@ export const PUT = withApi(async (request: NextRequest, { params }) => {
  *
  * Deleta usuário
  */
-export const DELETE = withApi(async (request: NextRequest, { params }) => {
-  const { id } = params;
+export const DELETE = withApi(async (request: NextRequest, context: { params: Promise<Record<string, string | string[]>> }) => {
+  const resolvedParams = await context.params;
+  const id = resolvedParams.id as string;
 
   try {
     const client = getAuthClient();

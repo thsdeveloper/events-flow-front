@@ -30,5 +30,5 @@ export const PATCH = withApi(async (request: NextRequest) => {
 		})
 	);
 
-	return { success: true };
+	return Response.json({ success: true });
 });

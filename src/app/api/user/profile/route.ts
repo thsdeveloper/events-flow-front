@@ -34,5 +34,5 @@ export const PATCH = withApi(async (request: NextRequest) => {
 		})
 	);
 
-	return { success: true, user: updatedUser };
+	return Response.json({ success: true, user: updatedUser });
 });

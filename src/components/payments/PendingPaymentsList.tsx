@@ -74,13 +74,13 @@ export default function PendingPaymentsList() {
 
     try {
       const response = await fetch('/api/my-registrations/pending-payments');
-      const data: ApiResponse = await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || 'Erro ao carregar pagamentos');
       }
 
-      setRegistrations(data.data);
+      setRegistrations((data as ApiResponse).data);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       setError(errorMessage);
